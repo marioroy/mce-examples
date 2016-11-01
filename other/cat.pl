@@ -26,7 +26,7 @@ sub INIT {
    @ARGV = <@ARGV> if ($^O eq 'MSWin32');
 }
 
-use MCE;
+use MCE 1.807;
 
 ###############################################################################
 ## ----------------------------------------------------------------------------
@@ -59,7 +59,6 @@ DESCRIPTION
           Specify chunk size for MCE          -- default: 2 MiB
 
    -n     Number the output lines, starting at 1
-   -u     Disable output buffering
 
 EXIT STATUS
    The $prog_name utility exits 0 on success, and >0 if an error occurs.
@@ -106,7 +105,6 @@ my $max_workers = 'auto';
 my $skip_args   = 0;
 
 my $n_flag = 0;
-my $u_flag = 0;
 
 my @files = ();
 
@@ -120,7 +118,6 @@ while ( my $arg = shift @ARGV ) {
          while ($arg) {
             my $a = chop($arg);
             $n_flag = $flag->() and next if ($a eq 'n');
-            $u_flag = $flag->() and next if ($a eq 'u');
          }
          next;
       }
@@ -154,6 +151,8 @@ if ($n_flag == 0 && $max_workers eq 'auto') {
 ##
 ###############################################################################
 
+$| = 1; # Important, must flush output immediately.
+
 my $mce = MCE->new(
 
    chunk_size  => $chunk_size, max_workers => $max_workers,
@@ -179,27 +178,18 @@ my $mce = MCE->new(
       else {
          ## The following is another way to have ordered output. Workers
          ## write directly to STDOUT exclusively without any involvement
-         ## from the manager process. The statements between relay_recv
-         ## and relay run serially and most important orderly.
+         ## from the manager process. The statement(s) between relay_lock
+         ## and relay_unlock run serially and most important orderly.
 
-         ## STDERR/OUT flush automatically inside worker threads and
-         ## processes. Disable buffering on file handles otherwise.
-
-         MCE->relay_recv;             ## my $val = MCE->relay_recv;
-                                      ## relay simply forwards 0 below
-
-         print $$chunk_ref;           ## exclusive access to STDOUT
-                                      ## important, flush immediately
-
-         MCE->relay;
+         MCE->relay_lock;
+         print $$chunk_ref;
+         MCE->relay_unlock;
       }
 
       return;
    }
 
 )->spawn;
-
-local $| = 1 if $u_flag;
 
 ###############################################################################
 ## ----------------------------------------------------------------------------
