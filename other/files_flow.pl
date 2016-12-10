@@ -14,7 +14,10 @@ use MCE::Shared;
 my $D = MCE::Shared->queue( queue => [ $ARGV[0] || '.' ] );
 my $F = MCE::Shared->queue( fast  => defined $ARGV[1] ? $ARGV[1] : 1 );
 
-my $providers = 3;
+## Glob() is not thread-safe in Perl 5.16.x; okay < 5.16, fixed in 5.18.2.
+## Not all OS vendors have patched 5.16.x.
+
+my $providers = ($INC{'threads.pm'} && ($] >= 5.016000 && $] < 5.018002)) ? 1 : 3;
 my $consumers = 8;
 
 MCE::Flow::init {
