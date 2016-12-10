@@ -25,7 +25,7 @@ my $state :shared = 'ready';
 my $microsecs = ( lc $^O =~ /mswin|mingw|msys|cygwin/ ) ? 0 : 200;
 
 sub barrier_sync {
-   usleep($microsecs) until $state eq 'ready' or $state eq 'up';
+   usleep($microsecs) while $state eq 'down';
 
    lock $count;
    $state = 'up', $count++;
@@ -36,8 +36,7 @@ sub barrier_sync {
    }
    else {
       cond_wait($count) while $state eq 'up';
-      $count--;
-      $state = 'ready' if $count == 0;
+      $state = 'ready' if --$count == 0;
    }
 }
 
@@ -60,9 +59,9 @@ printf {*STDERR} "\nduration: %0.3f\n\n", time() - $start;
 
 ## Time taken from a 2.6 GHz machine running Mac OS X.
 ##
-## threads::shared:   0.238s  threads
+## threads::shared:   0.207s  threads
 ##   forks::shared:  36.426s  child processes
-##     MCE::Shared:   0.397s  child processes
+##     MCE::Shared:   0.353s  child processes
 ##        MCE Sync:   0.062s  child processes
 ##
 
