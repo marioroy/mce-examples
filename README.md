@@ -16,7 +16,10 @@ They are organized into sub-directories.
     fibonacci/ fibprime-hobo.pl, fibprime-mce.pl, fibprime-threads.pl
         Math::Prime::Util parallel demonstration
 
-    gearman_xs/ reverse_client*.pl, reverse_worker*.pl
+    gearman/ reverse_client*.pl, reverse_worker*.pl (non-xs module)
+        MCE + Gearman parallel demonstrations
+
+    gearman_xs/ reverse_client*.pl, reverse_worker*.pl (xs module)
         MCE + Gearman::XS parallel demonstrations
 
     matmult/ matmult_base*.pl, matmult_mce*.pl, strassen_mce*.pl
