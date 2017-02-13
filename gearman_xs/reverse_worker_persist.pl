@@ -53,7 +53,7 @@ my $mce = MCE->new(
             $result .= $letter;
          }
 
-         $output .= "$string: $result $$\n";
+         $output .= "$string: $result\n";
       }
 
       MCE->gather($mce_chunk_id, $output);
