@@ -16,6 +16,9 @@ They are organized into sub-directories.
     fibonacci/ fibprime-hobo.pl, fibprime-mce.pl, fibprime-threads.pl
         Math::Prime::Util parallel demonstration
 
+    gearman_xs/ reverse_client*.pl, reverse_worker*.pl
+        MCE + Gearman::XS parallel demonstrations
+
     matmult/ matmult_base*.pl, matmult_mce*.pl, strassen_mce*.pl
         Various matrix multiplication demonstrations benchmarking
         PDL, PDL + MCE, as well as parallelizing Strassen's

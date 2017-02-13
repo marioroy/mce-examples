@@ -1,0 +1,65 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Getopt::Std;
+use Gearman::XS qw(:constants);
+use Gearman::XS::Client;
+
+use Perl::Unsafe::Signals;
+use Storable qw(freeze thaw);
+
+my (%opts, $host, $port, $client, $chunk_size, $chunk_id, $ret);
+
+if (!getopts('h:p:', \%opts) || scalar @ARGV < 1) {
+   print "\nusage: $0 [-h <host>] [-p <port>] <string> [ <string> ... ]\n";
+   print "\t-h <host> - job server host\n";
+   print "\t-p <port> - job server port\n\n";
+   exit(1);
+}
+
+$host = $opts{h} || '';
+$port = $opts{p} || 0;
+
+$client = Gearman::XS::Client->new();
+$client->add_server($host, $port);
+$client->set_complete_fn(\&completed_cb);
+
+$chunk_size = 3;
+$chunk_id   = 0;
+
+while (@ARGV) {
+   my @next = splice @ARGV, 0, $chunk_size;
+   my $workload = [ ++$chunk_id, \@next ];
+   my ($ret, $task) = $client->add_task('reverse', freeze($workload));
+
+   if ($ret != GEARMAN_SUCCESS) {
+      printf(STDERR "%s\n", $client->error());
+      exit(1);
+   }
+
+   printf("Added: %s ChunkID:%s\n", $task->unique(), $chunk_id);
+}
+
+UNSAFE_SIGNALS {
+   $ret = $client->run_tasks();
+};
+if ($ret != GEARMAN_SUCCESS) {
+   printf(STDERR "%s\n", $client->error());
+   exit(1);
+}
+
+exit;
+
+sub completed_cb {
+   my ($task) = @_;
+   my $result = thaw( $task->data() ); # [ chunk_id, results ]
+
+   printf( "Completed: %s ChunkID:%s\n%s\n",
+      $task->job_handle(), $result->[0], $result->[1]
+   );
+
+   return GEARMAN_SUCCESS;
+}
+
