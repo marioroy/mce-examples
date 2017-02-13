@@ -114,7 +114,7 @@ spawned one time. Therefore, workers persist between runs.
  perl reverse_client_stdin.pl -p 4730 < /usr/share/dict/words | wc -l
 ```
 
-Chunking is set to 8000 and 500 in the client and worker scripts respectively.
+Chunking is set to 4000 and 500 in the client and worker scripts respectively.
 Mind you, the overall processing time is reasonably fast for half a million
 words. I'm not going to tell you here to not spoil the fun.
 
