@@ -83,6 +83,10 @@ sub reverse {
       $job->handle(), $workload->[0], scalar(@{ $workload->[1] })
    );
 
+   # The non-xs Gearman module doesn't have a way to obtain the job-handle
+   # associated with the completed job. Thus, am including here to be able
+   # to test the xs and non-xs Gearman modules interchangeably.
+
    return freeze([ $job->handle(), $workload->[0], join('', @results) ]);
 }
 

@@ -65,6 +65,12 @@ exit;
 
 sub completed_cb {
    my ($task) = @_;
+
+   # The non-xs Gearman module receives a scalar reference to the return
+   # value only, not the $self object. Therefore, workers include the job
+   # handle (not used here) to be able to display it from inside a client
+   # script using the non-xs Gearman module.
+
    my $result = thaw( $task->data() ); # [ job_handle, chunk_id, results ]
 
    MCE->printf( "Completed: %s ChunkID:%s\n%s\n",
