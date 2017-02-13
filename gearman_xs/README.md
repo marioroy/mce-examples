@@ -58,13 +58,13 @@ CTRL-C.
 
 ### RUNNING
 
-1. Run the gearman server:
+Run the gearman server:
 
 ```
  gearmand --port=4730 &
 ```
 
-2. Run any worker script in shell 1:
+Run any worker script in shell 1:
 
 ```
  perl reverse_worker.pl -p 4730
@@ -73,7 +73,7 @@ CTRL-C.
  perl reverse_worker_persist.pl -p 4730
 ```
 
-3. Run any client script in shell 2:
+Run any client script in shell 2:
 
 ```
  perl reverse_client.pl -p 4730 string1 string2 ... stringN
@@ -87,28 +87,25 @@ by running parallel themselves. An idea is running 1 worker script per 8 logical
 cores. It is a way to relieve stress on gearmand as far as IPC and running on
 many thousands of nodes.
 
-For a fun exercise, try the following. For the persist script, MCE workers are
-spawned one time. Therefore, workers persist between runs.
+### EXERCISE
 
-1. Run the script where workers persist in shell 1:
+MCE workers are spawned one time in reverse_worker_persist.pl. Thus, workers
+persist between runs. This wants a big input file. There is such a thing on
+Linux.
 
-```
- perl reverse_worker_persist.pl -p 4730
-```
-
-2. Run another, same script in shell 2:
+Run the script where workers persist in shell 1:
 
 ```
  perl reverse_worker_persist.pl -p 4730
 ```
 
-3. Yet another, again same script in shell 3:
+Run another, same script in shell 2:
 
 ```
  perl reverse_worker_persist.pl -p 4730
 ```
 
-4. Finally, run the client script supporting STDIN in shell 4:
+Finally, run the client script supporting STDIN in shell 3:
 
 ```
  perl reverse_client_stdin.pl -p 4730 < /usr/share/dict/words | wc -l
