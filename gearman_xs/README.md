@@ -105,7 +105,7 @@ Run another, same script in shell 2:
  perl reverse_worker_persist.pl -p 4730
 ```
 
-Finally, run the client script supporting STDIN in shell 3:
+Run the client script supporting STDIN in shell 3:
 
 ```
  perl reverse_client_stdin.pl -p 4730 < /usr/share/dict/words | wc -l
