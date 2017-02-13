@@ -25,15 +25,15 @@ $host = $opts{h} || 'localhost';
 $port = $opts{p} || 4730;
 
 MCE::Flow->init(
-   chunk_size  => 4000, max_workers => 3,
+   chunk_size => 4000, max_workers => 3,
 
-   user_begin  => sub {
+   user_begin => sub {
       $client = Gearman::XS::Client->new();
       $client->add_server($host, $port);
       $client->set_complete_fn(\&completed_cb);
    },
 
-   user_end    => sub {
+   user_end => sub {
       my $ret; UNSAFE_SIGNALS {
          $ret = $client->run_tasks();
       };
@@ -46,8 +46,8 @@ MCE::Flow->init(
 
 sub parallel {
    my ($mce, $chunk_ref, $chunk_id) = @_;
-   my $workload = [ $chunk_id, $chunk_ref ];
-   my ($ret, $task) = $client->add_task('reverse', freeze($workload));
+   my $workload = freeze([ $chunk_id, $chunk_ref ]);
+   my ($ret, $task) = $client->add_task('reverse', $workload);
 
    if ($ret != GEARMAN_SUCCESS) {
       MCE->printf(\*STDERR, "%s\n", $client->error());

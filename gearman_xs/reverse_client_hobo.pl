@@ -57,8 +57,8 @@ sub parallel {
 
       last unless @next;
 
-      my $workload = [ $chunk_id, \@next ];
-      my ($ret, $task) = $client->add_task("reverse", freeze($workload));
+      my $workload = freeze([ $chunk_id, \@next ]);
+      my ($ret, $task) = $client->add_task("reverse", $workload);
 
       if ($ret != GEARMAN_SUCCESS) {
          printf({$ERR} "%s\n", $client->error());

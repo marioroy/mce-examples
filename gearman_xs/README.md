@@ -1,6 +1,16 @@
 
 ## Perl + MCE + Gearman::XS Demonstrations
 
+This is a repository for testing MCE together with Gearman (xs) module.
+MCE::Examples include samples using the non-xs and xs interface. Although the
+API is not compatible between the two, the scripts residing here may run
+interchangeably.
+
+```
+ perl mce-examples/gearman/reverse_worker.pl     # non-xs module
+ perl mce-examples/gearman_xs/reverse_client.pl  # xs module
+```
+
 [Gearman](http://gearman.org) is an application framework allowing solutions
 to farm out work to other machines. The included scripts demonstrate job
 submissions to gearmand from a serial process and parallel using
@@ -33,7 +43,7 @@ To run the examples, Perl is necessary obviously and various modules.
  MCE::Shared 1.809
  Gearman::XS 0.15
  Perl::Unsafe::Signals 0.03
- Storable, installed with Perl, typically
+ Storable (installed with Perl, typically)
 ```
 
 The Gearman module is handled via the XS interface which is nice, of course.

@@ -31,8 +31,8 @@ $chunk_id   = 0;
 
 while (@ARGV) {
    my @next = splice @ARGV, 0, $chunk_size;
-   my $workload = [ ++$chunk_id, \@next ];
-   my ($ret, $task) = $client->add_task('reverse', freeze($workload));
+   my $workload = freeze([ ++$chunk_id, \@next ]);
+   my ($ret, $task) = $client->add_task('reverse', $workload);
 
    if ($ret != GEARMAN_SUCCESS) {
       printf(STDERR "%s\n", $client->error());

@@ -80,8 +80,7 @@ sub reverse {
             }
 
           # $data->set($pos, "$string: $result\n"); # don't do this
-
-            $_data{$pos} = "$string: $result\n"; # store locally instead
+            $_data{$pos} = "$string: $result\n";    # store locally instead
          }
 
          $data->mset(%_data); # batch update shared-array outside of loop
@@ -106,8 +105,8 @@ sub reverse {
    );
 
    # The non-xs Gearman module doesn't have a way to obtain the job-handle
-   # associated with the completed job. Thus, am including here to be able
-   # to test the xs and non-xs Gearman modules interchangeably.
+   # inside the completed callback. Thus, am including here to be able to
+   # test the xs and non-xs Gearman modules interchangeably.
 
    return freeze([ $job->handle(), $workload->[0], join('', $data->vals) ]);
 }
