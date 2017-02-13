@@ -19,8 +19,8 @@ if (!getopts('h:p:', \%opts) || scalar @ARGV < 1) {
    exit(1);
 }
 
-$host = $opts{h} || '';
-$port = $opts{p} || 0;
+$host = $opts{h} || 'localhost';
+$port = $opts{p} || 4730;
 
 $client = Gearman::XS::Client->new();
 $client->add_server($host, $port);

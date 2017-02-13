@@ -21,8 +21,8 @@ if (!getopts('h:p:', \%opts)) {
    exit(1);
 }
 
-$host = $opts{h} || '';
-$port = $opts{p} || 0;
+$host = $opts{h} || 'localhost';
+$port = $opts{p} || 4730;
 
 MCE::Flow->init(
    chunk_size  => 4000, max_workers => 3,

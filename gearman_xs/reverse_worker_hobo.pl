@@ -22,8 +22,8 @@ if (!getopts('h:p:', \%opts)) {
    exit(1);
 }
 
-$host = $opts{h} || '';
-$port = $opts{p} || 0;
+$host = $opts{h} || 'localhost';
+$port = $opts{p} || 4730;
 
 $worker = Gearman::XS::Worker->new();
 $worker->add_server($host, $port);
