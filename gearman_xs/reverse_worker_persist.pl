@@ -10,8 +10,8 @@ use Gearman::XS::Worker;
 use Perl::Unsafe::Signals;
 use Storable qw(freeze thaw);
 
-use MCE::Hobo;
-use MCE::Shared;
+use MCE;
+use MCE::Candy;
 
 my (%opts, $host, $port, $worker);
 
@@ -34,6 +34,32 @@ if ($ret != GEARMAN_SUCCESS) {
    printf(STDERR "%s\n", $worker->error());
 }
 
+my @results;
+
+my $mce = MCE->new(
+   chunk_size  => 500,
+   max_workers => 4,
+
+   user_func   => sub {
+      my ($mce, $mce_chunk_ref, $mce_chunk_id) = @_;
+      my $output = '';  chomp @{ $mce_chunk_ref };
+
+      for my $string ( @{ $mce_chunk_ref } ) {
+         my $string_size = length($string);
+         my $result = '';
+
+         for (my $i = $string_size; $i > 0; $i--) {
+            my $letter = substr($string, ($i - 1), 1);
+            $result .= $letter;
+         }
+
+         $output .= "$string: $result $$\n";
+      }
+
+      MCE->gather($mce_chunk_id, $output);
+   }
+)->spawn();
+
 while (1) {
    UNSAFE_SIGNALS {
       $ret = $worker->work();
@@ -47,33 +73,15 @@ sub reverse {
    my ($job, $options) = @_;
    my $workload = thaw( $job->workload() ); # [ chunk_id, chunk_ref ]
 
-   my $seq  = MCE::Shared->sequence(0, $#{ $workload->[1] });
-   my $data = MCE::Shared->array();
-
-   my $parallel = sub {
-      while ( defined ( my $pos = $seq->next ) ) {
-         my $string = $workload->[1][$pos]; chomp($string);
-         my $string_size = length($string);
-         my $result = '';
-
-         for (my $i = $string_size; $i > 0; $i--) {
-            my $letter = substr($string, ($i - 1), 1);
-            $result .= $letter;
-         }
-
-         $data->set($pos, "$string: $result\n");
-      }
-
-      return;
-   };
-
-   MCE::Hobo->create($parallel) for (1 .. 4);
-   MCE::Hobo->waitall();
-
+   $mce->process(
+      { gather => MCE::Candy::out_iter_array(\@results) },
+      $workload->[1]
+   );
    printf( "Job=%s ChunkID=%s NumItems=%s\n",
       $job->handle(), $workload->[0], scalar(@{ $workload->[1] })
    );
 
-   return freeze([ $workload->[0], join('', $data->vals) ]);
+   # empty @results by splicing so ready for the next run
+   return freeze([ $workload->[0], join('', splice(@results, 0)) ]);
 }
 

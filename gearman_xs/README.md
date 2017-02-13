@@ -11,6 +11,7 @@ submissions to gearmand from a serial process and parallel using
  reverse_client.pl
  reverse_client_mce.pl
  reverse_client_hobo.pl
+ reverse_client_stdin.pl
 ```
 
 Processing is handled by a given worker script, running serially and parallel
@@ -20,6 +21,7 @@ using MCE or MCE::Hobo.
  reverse_worker.pl
  reverse_worker_mce.pl
  reverse_worker_hobo.pl
+ reverse_worker_persist.pl
 ```
 
 ### REQUIREMENTS
@@ -65,21 +67,59 @@ CTRL-C.
 2. Run any worker script in shell 1:
 
 ```
- perl reverse_worker.pl      -p 4730
- perl reverse_worker_mce.pl  -p 4730
+ perl reverse_worker.pl -p 4730
+ perl reverse_worker_mce.pl -p 4730
  perl reverse_worker_hobo.pl -p 4730
+ perl reverse_worker_persist.pl -p 4730
 ```
 
 3. Run any client script in shell 2:
 
 ```
- perl reverse_client.pl      -p 4730 string1 string2 ... stringN
- perl reverse_client_mce.pl  -p 4730 string1 string2 ... stringN
+ perl reverse_client.pl -p 4730 string1 string2 ... stringN
+ perl reverse_client_mce.pl -p 4730 string1 string2 ... stringN
  perl reverse_client_hobo.pl -p 4730 string1 string2 ... stringN
+ perl reverse_client_stdin.pl -p 4730 < /usr/share/dict/words | wc -l
 ```
 
 The gist of it all is that compute nodes might be running fewer worker scripts
 by running parallel themselves. An idea is running 1 worker script per 8 logical
 cores. It is a way to relieve stress on gearmand as far as IPC and running on
 many thousands of nodes.
+
+For a fun exercise, try the following. For the persist script, MCE workers are
+spawned one time. Therefore, workers persist between runs.
+
+1. Run the script where workers persist in shell 1:
+
+```
+ perl reverse_worker_persist.pl -p 4730
+```
+
+2. Run another, same script in shell 2:
+
+```
+ perl reverse_worker_persist.pl -p 4730
+```
+
+3. Yet another, again same script in shell 3:
+
+```
+ perl reverse_worker_persist.pl -p 4730
+```
+
+4. Finally, run the client script supporting STDIN in shell 4:
+
+```
+ perl reverse_client_stdin.pl -p 4730 < /usr/share/dict/words | wc -l
+```
+
+Chunking is set to 8000 and 500 in the client and worker scripts respectively.
+Mind you, the overall processing time is reasonably fast for half a million
+words. I'm not going to tell you here to not spoil the fun.
+
+What I've learn from this experience is that running parallel is beneficial at
+both ends; job submission (client script) and on compute nodes (worker script).
+
+Regards, Mario.
 

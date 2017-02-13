@@ -49,7 +49,7 @@ sub reverse {
    MCE::Map->init( chunk_size => 'auto', max_workers => 4 );
 
    my @data = mce_map {
-      my $string = $_;
+      my $string = $_; chomp($string);
       my $string_size = length($string);
       my $result = '';
 

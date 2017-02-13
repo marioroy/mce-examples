@@ -45,7 +45,7 @@ sub reverse {
    my $workload = thaw( $job->workload() ); # [ chunk_id, chunk_ref ]
 
    my @data = map {
-      my $string = $_;
+      my $string = $_; chomp($string);
       my $string_size = length($string);
       my $result = '';
 
