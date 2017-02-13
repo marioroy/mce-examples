@@ -39,6 +39,7 @@ while (1) {
    };
    if ($ret != GEARMAN_SUCCESS) {
       printf(STDERR "%s\n", $worker->error());
+      sleep(1);
    }
 }
 
@@ -47,6 +48,12 @@ sub reverse {
    my $workload = thaw( $job->workload() ); # [ chunk_id, chunk_ref ]
 
    MCE::Map->init( chunk_size => 'auto', max_workers => 4 );
+
+   # MCE workers might not persist after running depending on the code.
+   # If workers must persist, then place the code inside a subroutine.
+   # Call MCE::Map like this:
+   #
+   # my @data = MCE::Map->run(\&subroutine, @{ $workload->[1] });
 
    my @data = mce_map {
       my $string = $_; chomp($string);
@@ -62,7 +69,7 @@ sub reverse {
 
    } $workload->[1];
 
-   MCE::Map->finish();
+   # MCE::Map->finish(); # uncomment to shutdown workers after running
 
    printf( "Job=%s ChunkID=%s NumItems=%s\n",
       $job->handle(), $workload->[0], scalar(@{ $workload->[1] })

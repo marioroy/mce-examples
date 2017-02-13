@@ -40,6 +40,7 @@ while (1) {
    };
    if ($ret != GEARMAN_SUCCESS) {
       printf(STDERR "%s\n", $worker->error());
+      sleep(1);
    }
 }
 
