@@ -54,10 +54,10 @@ exit;
 
 sub completed_cb {
    my ($task) = @_;
-   my $result = thaw( $task->data() ); # [ chunk_id, results ]
+   my $result = thaw( $task->data() ); # [ job_handle, chunk_id, results ]
 
    printf( "Completed: %s ChunkID:%s\n%s\n",
-      $task->job_handle(), $result->[0], $result->[1]
+      $task->job_handle(), $result->[1], $result->[2]
    );
 
    return GEARMAN_SUCCESS;

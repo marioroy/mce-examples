@@ -46,6 +46,7 @@ while (1) {
 
 sub reverse {
    my ($job, $options) = @_;
+
    my $workload = thaw( $job->workload() ); # [ chunk_id, chunk_ref ]
 
    my $chunk_size = 500;
@@ -104,6 +105,6 @@ sub reverse {
       $job->handle(), $workload->[0], scalar(@{ $workload->[1] })
    );
 
-   return freeze([ $workload->[0], join('', $data->vals) ]);
+   return freeze([ $job->handle(), $workload->[0], join('', $data->vals) ]);
 }
 

@@ -83,6 +83,6 @@ sub reverse {
       $job->handle(), $workload->[0], scalar(@{ $workload->[1] })
    );
 
-   return freeze([ $workload->[0], join('', @results) ]);
+   return freeze([ $job->handle(), $workload->[0], join('', @results) ]);
 }
 
