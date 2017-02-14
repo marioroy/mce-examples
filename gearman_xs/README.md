@@ -1,14 +1,14 @@
 
 ## Perl + MCE + Gearman::XS Demonstrations
 
-This is a repository for testing MCE together with Gearman (xs) module.
+This is the repository for testing MCE together with Gearman (XS) module.
 MCE::Examples include samples using the non-xs and xs interface. Although the
 API is not compatible between the two, the scripts residing here may run
 interchangeably.
 
 ```
- perl mce-examples/gearman/reverse_worker.pl     # non-xs module
- perl mce-examples/gearman_xs/reverse_client.pl  # xs module
+ perl mce-examples/gearman/reverse_worker.pl     # non-XS module
+ perl mce-examples/gearman_xs/reverse_client.pl  # XS module
 ```
 
 [Gearman](http://gearman.org) is an application framework allowing solutions
@@ -39,8 +39,8 @@ using MCE or MCE::Hobo.
 To run the examples, Perl is necessary obviously and various modules.
 
 ```
- MCE 1.811
- MCE::Shared 1.809
+ MCE 1.812
+ MCE::Shared 1.810
  Gearman::XS 0.15
  Perl::Unsafe::Signals 0.03
  Storable (installed with Perl, typically)
@@ -123,10 +123,7 @@ Run the client script supporting STDIN in shell 3:
 
 Chunking is set to 4000 and 500 in the client and worker scripts respectively.
 Mind you, the overall processing time is reasonably fast for half a million
-words. I'm not going to tell you here to not spoil the fun.
-
-What I've learn from this experience is that running parallel is beneficial at
-both ends; job submission (client script) and on compute nodes (worker script).
+words, less than a second.
 
 Regards, Mario.
 

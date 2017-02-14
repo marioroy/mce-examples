@@ -7,8 +7,8 @@ use Getopt::Std;
 use Gearman::Worker;
 use Storable qw(freeze thaw);
 
+use MCE::Shared 1.810;
 use MCE::Hobo;
-use MCE::Shared;
 
 my (%opts, $host, $port, $worker);
 
@@ -70,7 +70,7 @@ sub reverse {
          $data->mset(%_data); # batch update shared-array outside of loop
       }
 
-      # Working with shared data among workers can be fast if batching
+      # Working with shared data among workers can be fast when batching
       # requests here and there. The result is a reduction in IPC to and
       # from the shared-manager process which is a good thing.
 

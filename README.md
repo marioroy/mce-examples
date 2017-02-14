@@ -17,10 +17,10 @@ They are organized into sub-directories.
         Math::Prime::Util parallel demonstration
 
     gearman/ reverse_client*.pl, reverse_worker*.pl (using non-XS module)
-        MCE + Gearman parallel demonstrations
+        Gearman + MCE parallel demonstrations
 
     gearman_xs/ reverse_client*.pl, reverse_worker*.pl (using XS module)
-        MCE + Gearman::XS parallel demonstrations
+        Gearman::XS + MCE parallel demonstrations
 
     matmult/ matmult_base*.pl, matmult_mce*.pl, strassen_mce*.pl
         Various matrix multiplication demonstrations benchmarking

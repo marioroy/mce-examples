@@ -7,7 +7,7 @@ use Getopt::Std;
 use Gearman::Client;
 use Storable qw(freeze thaw);
 
-use MCE::Flow;
+use MCE::Flow 1.812;
 
 my (%opts, $host, $port, $client, $tasks);
 

@@ -10,7 +10,7 @@ use Gearman::XS::Worker;
 use Perl::Unsafe::Signals;
 use Storable qw(freeze thaw);
 
-use MCE::Map;
+use MCE::Map 1.812;
 
 my (%opts, $host, $port, $worker);
 
