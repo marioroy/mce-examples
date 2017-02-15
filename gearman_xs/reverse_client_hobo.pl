@@ -10,7 +10,7 @@ use Gearman::XS::Client;
 use Perl::Unsafe::Signals;
 use Storable qw(freeze thaw);
 
-use MCE::Shared 1.810;
+use MCE::Shared 1.811;
 use MCE::Hobo;
 
 my (%opts, $host, $port);

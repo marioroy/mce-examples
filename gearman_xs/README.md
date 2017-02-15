@@ -40,7 +40,7 @@ To run the examples, Perl is necessary obviously and various modules.
 
 ```
  MCE 1.812
- MCE::Shared 1.810
+ MCE::Shared 1.811
  Gearman::XS 0.15
  Perl::Unsafe::Signals 0.03
  Storable (installed with Perl, typically)

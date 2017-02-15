@@ -7,7 +7,7 @@ use Getopt::Std;
 use Gearman::Worker;
 use Storable qw(freeze thaw);
 
-use MCE::Shared 1.810;
+use MCE::Shared 1.811;
 use MCE::Hobo;
 
 my (%opts, $host, $port, $worker);

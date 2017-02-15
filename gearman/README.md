@@ -40,7 +40,7 @@ To run the examples, Perl is necessary obviously and various modules.
 
 ```
  MCE 1.812
- MCE::Shared 1.810
+ MCE::Shared 1.811
  Gearman 2.002.004
  Storable (installed with Perl, typically)
 ```
