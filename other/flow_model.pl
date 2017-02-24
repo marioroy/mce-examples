@@ -76,21 +76,25 @@ sub pinger {
    my %pass   = ();
    my @fail   = ();
 
-   ## Delay momentarily to prevent many workers initiating pings
-   ## to many hosts simultaneously. See interval option in MCE::Core.pod.
+   # Delay momentarily to prevent many workers initiating pings to many hosts
+   # simultaneously. The interval option is described in MCE::Core.pod.
+
    MCE->yield();
 
-   ## $chunk_ref points to an array containing chunk_size items
+   # $chunk_ref points to an array containing chunk_size items.
+
    foreach my $host ( @{ $chunk_ref } ) {
       $pinger->ping($host, 3.333);
    }
 
-   ## Let pinger process entire chunk all at once
+   # Let pinger process entire chunk all at once.
+
    while ((my $host, my $rtt, my $ip) = $pinger->ack) {
       $pass{$host} = $pass{$ip} = 1;
    }
 
-   ## Process hosts/IPs
+   # Process hosts/IPs.
+
    my @successful;
 
    foreach my $host ( @{ $chunk_ref } ) {
@@ -101,7 +105,8 @@ sub pinger {
       }
    }
 
-   ## Enqueue all at once for successful hosts/IPs
+   # Enqueue all at once for successful hosts/IPs.
+
    $Q->enqueue(@successful) if (@successful);
 
    return;
@@ -114,6 +119,7 @@ sub task2 {
    while (defined (my $host = $Q->dequeue)) {
 
       ## Do something with $host if desired.
+
       my %h = ();
 
       $h{raw} = "test result";
