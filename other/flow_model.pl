@@ -149,8 +149,8 @@ my @h = qw(
 print "## Please wait. This can take 3.4 seconds.\n";
 
 my %r = mce_flow {
-   chunk_size  => 30,
-   max_workers => [ 6, 4 ],
+   chunk_size  => 50,
+   max_workers => [ 8, 4 ],
    task_name   => [ 'pinger', 'task2' ]
 
 }, \&pinger, \&task2, @h;
