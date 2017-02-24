@@ -4,6 +4,8 @@
 ## This example demonstrates MCE::Flow, MCE::Queue, and MCE->gather.
 ## Allow 5.5 seconds for the ping timeout to expire before seeing results.
 ##
+## This script must be run by root due to constructing Net::Ping->new('syn').
+##
 ###############################################################################
 
 use strict;
@@ -19,10 +21,12 @@ my $Q = MCE::Queue->new;
 ###############################################################################
 
 ## Configure MCE options. Both user_begin and user_end are called by the worker
-## process. The manager process calls task_end after the task has completed.
-## Note the use of task_name below.
+## process. The manager-process calls task_end immediately after the task has
+## completed. Note the use of task_name inside the task_end callback.
 
 MCE::Flow::init {
+
+   interval => 0.030,
 
    user_begin => sub {
       my ($mce) = @_;
@@ -72,6 +76,10 @@ sub pinger {
    my %pass   = ();
    my @fail   = ();
 
+   ## Delay momentarily to prevent many workers initiating pings
+   ## to many hosts simultaneously. See interval option in MCE::Core.pod.
+   MCE->yield();
+
    ## $chunk_ref points to an array containing chunk_size items
    foreach my $host ( @{ $chunk_ref } ) {
       $pinger->ping($host, 3.333);
@@ -104,10 +112,11 @@ sub task2 {
    my ($mce) = @_;
 
    while (defined (my $host = $Q->dequeue)) {
-      ## Do something with $host ...
+
+      ## Do something with $host if desired.
       my %h = ();
 
-      $h{raw} = "task2 data";
+      $h{raw} = "test result";
       $h{fun} = "other data";
 
       MCE->gather("$host.status", "Successful");
@@ -134,8 +143,8 @@ my @h = qw(
 print "## Please wait. This can take 3.4 seconds.\n";
 
 my %r = mce_flow {
-   chunk_size  => 100,
-   max_workers => [ 4, 20 ],
+   chunk_size  => 30,
+   max_workers => [ 6, 4 ],
    task_name   => [ 'pinger', 'task2' ]
 
 }, \&pinger, \&task2, @h;
