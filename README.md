@@ -79,7 +79,7 @@ The rest are placed inside the "other" directory.
         Process STDIN or FILE in parallel. Processing is via Perl for
         pipe1.pl, whereas an external command for pipe2.pl.
 
-    seq_demo.pl, step_demo.pl, step_mon.pl
+    seq_demo.pl, step_demo.pl, step_model.pl, step_mon.pl
         Demonstration of the new sequence option appearing in MCE 1.3.
         Run with seq_demo.pl | sort
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env perl
 ###############################################################################
 ## ----------------------------------------------------------------------------
-## This example demonstrates MCE::Flow, MCE::Queue, and MCE->gather.
+## This example demonstrates MCE::Step, MCE->enq, and MCE->gather.
 ## Allow 5.5 seconds for the ping timeout to expire before seeing results.
 ##
 ## This script must be run by root due to constructing Net::Ping->new('syn').
-## See also step_model.pl, using MCE::Step.
+## See also flow_model.pl, using MCE::Flow.
 ##
 ###############################################################################
 
@@ -13,19 +13,15 @@ use strict;
 use warnings;
 
 use Net::Ping;
-
-use MCE::Flow;
-use MCE::Queue;
-
-my $Q = MCE::Queue->new;
+use MCE::Step;
 
 ###############################################################################
 
 ## Configure MCE options.
 ## The user_begin and user_end callbacks are called by each worker process.
-## The manager-process calls the task_end after a given task has completed.
+## Unlike the flow_model.pl example, task_end is ignored if specified here.
 
-MCE::Flow::init {
+MCE::Step::init {
 
    interval => 0.030,
 
@@ -45,17 +41,6 @@ MCE::Flow::init {
 
       if (MCE->task_name eq 'pinger') {
          $mce->{pinger}->close;
-      }
-
-      return;
-   },
-
-   task_end => sub {
-      my ($mce, $task_id, $task_name) = @_;
-
-      if ($task_name eq 'pinger') {
-         my $n_workers = $mce->{user_tasks}->[$task_id + 1]->{max_workers};
-         $Q->enqueue((undef) x $n_workers);
       }
 
       return;
@@ -108,16 +93,16 @@ sub pinger {
 
    # Enqueue all at once for successful hosts/IPs.
 
-   $Q->enqueue(@successful) if (@successful);
+   MCE->enq('task2', \@successful) if (@successful);
 
    return;
 }
 
 sub task2 {
 
-   my ($mce) = @_;
+   my ($mce, $successful_hosts) = @_;
 
-   while (defined (my $host = $Q->dequeue)) {
+   foreach my $host ( @{ $successful_hosts } ) {
 
       # do something with $host if desired
       my %h = ();
@@ -125,7 +110,7 @@ sub task2 {
       $h{raw} = "test result";
       $h{fun} = "other data";
 
-      # gather key-value pairs for %r = mce_flow { ... }
+      # gather key-value pairs for %r = mce_step { ... }
       MCE->gather("$host.status", "Successful");
       MCE->gather("$host.data", \%h);
    }
@@ -140,7 +125,7 @@ sub task2 {
 
 my @h = qw( 127.0.0.1  127.0.0.8  127.0.0.9 );
 
-## MCE options can be passed here or through MCE::Flow::init above.
+## MCE options can be passed here or through MCE::Step::init above.
 ## Both max_workers and task_name options support an array reference
 ## for setting each sub-task individually. The two gather calls in
 ## task2 above send key/value pair(s) to the manager-process and
@@ -148,7 +133,7 @@ my @h = qw( 127.0.0.1  127.0.0.8  127.0.0.9 );
 
 print "## Please wait. This can take 3.4 seconds.\n";
 
-my %r = mce_flow {
+my %r = mce_step {
    chunk_size  => 50,
    max_workers => [ 8, 4 ],
    task_name   => [ 'pinger', 'task2' ]
