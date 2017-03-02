@@ -10,7 +10,7 @@ use threads::shared;
 
 use Time::HiRes 'sleep';
 
-use MCE;
+use MCE 1.818;
 use Thread::Queue;
 
 my $D = Thread::Queue->new($ARGV[0] || '.');
@@ -26,9 +26,7 @@ my $mce = MCE->new(
 
    task_end => sub {
       my ($mce, $task_id, $task_name) = @_;
-
-      $F->enqueue((undef) x $consumers)
-         if $task_name eq 'dir';
+      $F->end() if ($task_name eq 'dir');
    },
 
    user_tasks => [{

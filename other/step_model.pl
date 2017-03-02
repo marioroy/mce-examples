@@ -12,8 +12,8 @@
 use strict;
 use warnings;
 
+use MCE::Step 1.818;
 use Net::Ping;
-use MCE::Step;
 
 ###############################################################################
 

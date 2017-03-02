@@ -3,8 +3,8 @@
 use strict;
 use warnings;
 
-use MCE::Flow;
-use MCE::Shared;
+use MCE::Flow   1.818;
+use MCE::Shared 1.814;
 
 # Results from CentOS 7 VM (4 cores): time flow_demo.pl | wc -l
 #
@@ -160,13 +160,13 @@ MCE::Flow::init {
       my ($mce, $task_id, $task_name) = @_;
 
       if ($task_name eq 'poller') {
-         $setter_q->enqueue((undef) x $n_setters);
+         $setter_q->end();
       }
       elsif ($task_name eq 'setter') {
-         $pinger_q->enqueue((undef) x $n_pingers);
+         $pinger_q->end();
       }
       elsif ($task_name eq 'pinger') {
-         $writer_q->enqueue((undef) x $n_writers);
+         $writer_q->end();
       }
    }
 };

@@ -8,8 +8,8 @@ use warnings;
 
 use Time::HiRes 'sleep';
 
-use MCE::Flow;
-use MCE::Shared;
+use MCE::Flow   1.818;
+use MCE::Shared 1.814;
 
 my $D = MCE::Shared->queue( queue => [ $ARGV[0] || '.' ] );
 my $F = MCE::Shared->queue( fast  => defined $ARGV[1] ? $ARGV[1] : 1 );
@@ -23,9 +23,7 @@ my $consumers = 8;
 MCE::Flow::init {
    task_end => sub {
       my ($mce, $task_id, $task_name) = @_;
-
-      $F->enqueue((undef) x $consumers)
-         if $task_name eq 'dir';
+      $F->end() if ($task_name eq 'dir');
    }
 };
 

@@ -12,10 +12,9 @@
 use strict;
 use warnings;
 
-use Net::Ping;
-
-use MCE::Flow;
+use MCE::Flow 1.818;
 use MCE::Queue;
+use Net::Ping;
 
 my $Q = MCE::Queue->new;
 
@@ -54,8 +53,7 @@ MCE::Flow::init {
       my ($mce, $task_id, $task_name) = @_;
 
       if ($task_name eq 'pinger') {
-         my $n_workers = $mce->{user_tasks}->[$task_id + 1]->{max_workers};
-         $Q->enqueue((undef) x $n_workers);
+         $Q->end();
       }
 
       return;
