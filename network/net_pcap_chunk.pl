@@ -84,7 +84,7 @@ sub consumer {
         my $user_data = pop @{ $chunk };
 
         while ( my $next = shift @{ $chunk } ) {
-            my ($count, $packet, $header, $user_data) = @{ $next };
+            my ($count, $packet, $header) = @{ $next };
             my $output = '';
 
             $output .= sprintf "wid: %d, packet: %d, length: %d\n",

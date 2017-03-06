@@ -8,6 +8,8 @@ use Net::Pcap;
 # ------------------------------------------------------------
 # from Net::Pcap/t/samples
 
+my $user_data = "user_data";
+
 my $dmp_file = ( unpack("h*", pack("s", 1)) =~ /01/ )
     ? "samples/ping-ietf-20pk-be.dmp"
     : "samples/ping-ietf-20pk-le.dmp";
@@ -57,7 +59,7 @@ sub provider {
     while (1) {
         my $retval;
         UNSAFE_SIGNALS {
-            $retval = Net::Pcap::dispatch($pcap, 10, $callback, "user_data");
+            $retval = Net::Pcap::dispatch($pcap, 10, $callback, $user_data);
         };
         last unless ($retval);
         $Q->await($queue_limit) if ($queue_limit);
@@ -78,7 +80,8 @@ sub consumer {
             $wid, $count, length $packet;
 
         for my $field (qw( len caplen tv_sec tv_usec )) {
-            $output .= "field '$field' is present\n" if exists($header->{$field});
+            $output .= "field '$field' is present\n"
+                if exists($header->{$field});
         }
 
         MCE->print($output);

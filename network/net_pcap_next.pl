@@ -74,7 +74,8 @@ sub consumer {
             $wid, $count, length $packet;
 
         for my $field (qw( len caplen tv_sec tv_usec )) {
-            $output .= "field '$field' is present\n" if exists($header->{$field});
+            $output .= "field '$field' is present\n"
+                if exists($header->{$field});
         }
 
         MCE->print($output);
