@@ -51,7 +51,6 @@ sub provider {
 
     my $callback = sub {
         my ($user_data, $header, $packet) = @_;
-        $Q->await($queue_limit) if ($queue_limit);
         $Q->enqueue([ ++$count, $packet, $header, $user_data ]);
     };
 
@@ -61,6 +60,7 @@ sub provider {
             $retval = Net::Pcap::dispatch($pcap, 10, $callback, "user_data");
         };
         last unless ($retval);
+        $Q->await($queue_limit) if ($queue_limit);
     }
 
     Net::Pcap::close($pcap);
