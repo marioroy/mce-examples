@@ -8,6 +8,8 @@ use Net::Pcap;
 # ------------------------------------------------------------
 # from Net::Pcap/t/samples
 
+my $user_data = "user_data";
+
 my $dmp_file = ( unpack("h*", pack("s", 1)) =~ /01/ )
     ? "samples/ping-ietf-20pk-be.dmp"
     : "samples/ping-ietf-20pk-le.dmp";
@@ -42,7 +44,7 @@ exit(0);
 
 sub provider {
     my ($mce) = @_;
-    my ($count, $err) = (0);
+    my ($count, $err, @chunk) = (0);
 
     my $pcap = Net::Pcap::open_offline($dmp_file, \$err) or do {
         warn "open error: $err\n";
@@ -51,16 +53,24 @@ sub provider {
 
     my $callback = sub {
         my ($user_data, $header, $packet) = @_;
-        $Q->enqueue([ ++$count, $packet, $header, $user_data ]);
+        push @chunk, [ ++$count, $packet, $header ];
     };
 
     while (1) {
         my $retval;
+
         UNSAFE_SIGNALS {
-            $retval = Net::Pcap::dispatch($pcap, 10, $callback, "user_data");
+            $retval = Net::Pcap::dispatch($pcap, 10, $callback, $user_data);
         };
         last unless ($retval);
+
         $Q->await($queue_limit) if ($queue_limit);
+
+        if ( @chunk ) {
+           push @chunk, $user_data;
+           $Q->enqueue(\@chunk);
+           @chunk = ();
+        }
     }
 
     Net::Pcap::close($pcap);
@@ -70,18 +80,23 @@ sub consumer {
     my ($mce) = @_;
     my $wid = MCE->wid();
 
-    while ( my $next = $Q->dequeue ) {
-        my ($count, $packet, $header, $user_data) = @{ $next };
-        my $output = '';
+    while ( my $chunk = $Q->dequeue ) {
+        my $user_data = pop @{ $chunk };
 
-        $output .= sprintf "wid: %d, packet: %d, length: %d\n",
-            $wid, $count, length $packet;
+        while ( my $next = shift @{ $chunk } ) {
+            my ($count, $packet, $header, $user_data) = @{ $next };
+            my $output = '';
 
-        for my $field (qw( len caplen tv_sec tv_usec )) {
-            $output .= "field '$field' is present\n" if exists($header->{$field});
+            $output .= sprintf "wid: %d, packet: %d, length: %d\n",
+                $wid, $count, length $packet;
+
+            for my $field (qw( len caplen tv_sec tv_usec )) {
+                $output .= "field '$field' is present\n"
+                    if exists($header->{$field});
+            }
+
+            MCE->print($output);
         }
-
-        MCE->print($output);
     }
 }
 

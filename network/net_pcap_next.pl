@@ -19,8 +19,8 @@ use MCE::Queue;
 
 my $Q = MCE::Queue->new( await => 1, fast => 1 );
 
-my $max_consumers = 4;
 my $queue_limit   = 100;  # set to 0 for unlimited
+my $max_consumers = 4;
 
 MCE::Flow->init(
     max_workers => [ 1, $max_consumers ],

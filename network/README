@@ -2,6 +2,7 @@
 Various MCE demonstrations.
 
 net_pcap_dispatch.pl - producer-consumer Net::Pcap::dispatch
+net_pcap_chunk.pl    - producer-consumer Net::Pcap::dispatch
 net_pcap_next.pl     - producer-consumer Net::Pcap::next
 
 samples              - from Net::Pcap /t/samples
