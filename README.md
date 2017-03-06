@@ -28,6 +28,9 @@ They are organized into sub-directories.
         divide-and-conquer algorithm. Included are 2 plain
         Perl examples.
 
+    network/ net_pcap_dispatch.pl, net_pcap_next.pl
+        Various producer-consumer demonstrations.
+
     sampledb/ create.pl, query*.pl, update*.pl
         Examples demonstrating DBI (SQLite) with MCE.
 
