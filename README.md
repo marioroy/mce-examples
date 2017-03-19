@@ -28,8 +28,8 @@ They are organized into sub-directories.
         divide-and-conquer algorithm. Included are 2 plain
         Perl examples.
 
-    network/ net_pcap_dispatch.pl, net_pcap_next.pl
-        Various producer-consumer demonstrations.
+    network/ net_pcap*.pl, ping*.pl
+        Various manager-producer consumer demonstrations.
 
     sampledb/ create.pl, query*.pl, update*.pl
         Examples demonstrating DBI (SQLite) with MCE.
@@ -97,7 +97,7 @@ The rest are placed inside the "other" directory.
 
 ### Copyright and Licensing
 
-Copyright (C) 2012-2015 by Mario E. Roy <marioeroy AT gmail DOT com>
+Copyright (C) 2012-2017 by Mario E. Roy <marioeroy AT gmail DOT com>
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself:
