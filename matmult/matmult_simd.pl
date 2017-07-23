@@ -7,7 +7,7 @@
 ##
 ## Usage:
 ##    perl matmult_simd.pl 1024 [ N_threads ]      ## Default matrix size 512
-##                                                 ## Default N_threads 8
+##                                                 ## Default N_threads 4
 ##
 ## by David Mertens
 ## based on code by Mario Roy
@@ -45,7 +45,7 @@ my $rows = $tam;
 sequence($cols, $rows)->share_as('left_input');
 sequence($rows, $cols)->share_as('right_input');
 my $output = zeroes($rows, $rows)->share_as('output');
-my $N_threads = @ARGV ? shift : 8;
+my $N_threads = @ARGV ? shift : 4;
  
 ###################################
 # Run the calculation in parallel #

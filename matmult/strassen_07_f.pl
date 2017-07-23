@@ -13,6 +13,7 @@ my $prog_name = $0; $prog_name =~ s{^.*[\\/]}{}g;
 use Time::HiRes qw(time);
 
 use PDL;
+use File::Map;
 use PDL::IO::FastRaw;
 
 use MCE::Signal qw($tmp_dir -use_dev_shm);

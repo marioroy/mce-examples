@@ -3,7 +3,7 @@
 ##
 ## Usage:
 ##    perl matmult_perl.pl 1024 [ n_workers ]      ## Default matrix size 512
-##                                                 ## Default n_workers 8
+##                                                 ## Default n_workers 4
 ##
 
 use strict;
@@ -22,7 +22,7 @@ use MCE;
 ###############################################################################
 
 my $tam = @ARGV ? shift : 512;
-my $n_workers = @ARGV ? shift : 8;
+my $n_workers = @ARGV ? shift : 4;
 
 if ($tam !~ /^\d+$/ || $tam < 2) {
    die "error: $tam must be an integer greater than 1.\n";

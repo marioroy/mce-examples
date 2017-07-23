@@ -3,7 +3,7 @@
 ##
 ## Usage:
 ##    perl matmult_mce_f.pl 1024 [ n_workers ]     ## Default matrix size 512
-##                                                 ## Default n_workers 8
+##                                                 ## Default n_workers 4
 ##
 
 use strict;
@@ -14,6 +14,7 @@ my $prog_name = $0; $prog_name =~ s{^.*[\\/]}{}g;
 use Time::HiRes qw(time);
 
 use PDL;
+use File::Map;
 use PDL::IO::FastRaw;
 
 use MCE::Signal qw($tmp_dir -use_dev_shm);
@@ -24,7 +25,7 @@ use MCE;
 ###############################################################################
 
 my $tam = @ARGV ? shift : 512;
-my $n_workers = @ARGV ? shift : 8;
+my $n_workers = @ARGV ? shift : 4;
 
 if ($tam !~ /^\d+$/ || $tam < 2) {
    die "error: $tam must be an integer greater than 1.\n";
@@ -33,7 +34,7 @@ if ($tam !~ /^\d+$/ || $tam < 2) {
 my $cols = $tam;
 my $rows = $tam;
 
-my $step_size = ($tam > 2048) ? 24 : ($tam > 1024) ? 16 : 8;
+my $step_size = ($tam >= 2048) ? 256 : ($tam >= 1024) ? 128 : 64;
 
 my $mce = configure_and_spawn_mce($n_workers);
 
