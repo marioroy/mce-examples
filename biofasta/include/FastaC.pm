@@ -34,7 +34,7 @@ sub Faidx {
    my ($fh, $pos, $hdr, $seq);
 
    if (ref $file eq '' || ref $file eq 'SCALAR') {
-      open($fh, '<', $file) or die "$file: open: !\n";
+      open($fh, '<', $file) or die "$file: open: $!\n";
       $open_flg = 1;
    } else {
       $fh = $file;
