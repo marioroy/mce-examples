@@ -6,7 +6,8 @@ An adaptation of ["Chameneos, a Concurrency Game for Java, Ada, and Others"](htt
 Dependencies:
 
   * threads, threads::shared, and Thread::Queue 3.07 or later
-  * MCE and MCE::Shared
+  * Cygwin/UNIX OS'es: MCE 1.833 and MCE::Shared 1.834 or later
+  * Microsoft Windows: MCE 1.834 and MCE::Shared 1.835 minimally
 
 Files:
 
