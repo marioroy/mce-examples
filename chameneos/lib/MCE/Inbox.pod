@@ -35,6 +35,7 @@ This constructs a queue object for each ID in the list. It is not possible
 to add or remove an ID afterwards.
 
  @names = qw(foo bar baz);
+
  $inbox = MCE::Inbox->new(@names);
 
 =item limit ( $id, $size )
@@ -43,7 +44,8 @@ to add or remove an ID afterwards.
 
 Set the maximum number of messages pending for the given ID or list of IDs.
 This will cause send to block when the limit is reached until another worker
-receives again.
+receives again. Call limit optionally after constructing the inbox, before
+spawning threads and/or processes.
 
  $inbox->limit('foo', 100);
  $inbox->limit([ 'bar', 'baz' ], 200);
