@@ -13,6 +13,9 @@ They are organized into sub-directories.
     biofasta/ fasta_aidx.pl, fasta_rdr*.pl
         Parallel demonstration for Bioinformatics.
 
+    chameneos/ condvar*.pl, inbox*.pl
+        An adaptation of "Chameneos, a Concurrency Game" using Perl.
+
     fibonacci/ fibprime-hobo.pl, fibprime-mce.pl, fibprime-threads.pl
         Math::Prime::Util parallel demonstration
 
@@ -97,7 +100,7 @@ The rest are placed inside the "other" directory.
 
 ### Copyright and Licensing
 
-Copyright (C) 2012-2017 by Mario E. Roy <marioeroy AT gmail DOT com>
+Copyright (C) 2012-2018 by Mario E. Roy <marioeroy AT gmail DOT com>
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself:
