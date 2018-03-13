@@ -13,7 +13,7 @@ Dependencies:
 Files:
 
   * condvar1.pl  (MCE::Shared using TIE interface)
-  * condvar2.pl  (MCE::Shared using OO interface)
+  * condvar2.pl  (MCE::Shared using the OO interface)
   * inbox1.pl    (MCE::Inbox, concurrency via threads)
   * inbox2.pl    (MCE::Inbox, concurrency via MCE::Hobo)
   * lib          (contains MCE::Inbox supporting threads and processes)

@@ -21,10 +21,10 @@ die 'No argument given' if not @ARGV;
 my $start = time;
 my %color = ( blue => 1, red => 2, yellow => 4 );
 
-my @colors;
+my ( @colors, @complement );
+
 @colors[values %color] = keys %color;
 
-my @complement;
 for my $triple (
   [qw(blue blue blue)],
   [qw(red red red)],
@@ -36,7 +36,8 @@ for my $triple (
   [qw(yellow red blue)],
   [qw(yellow blue red)],
 ) {
-  $complement[ $color{$triple->[0]} | $color{$triple->[1]} ] = $color{$triple->[2]};
+  $complement[ $color{$triple->[0]} | $color{$triple->[1]} ] =
+    $color{$triple->[2]};
 }
 
 my @numbers = qw(zero one two three four five six seven eight nine);
@@ -79,7 +80,8 @@ sub chameneos
     }
 
     if (defined $first) {
-      $creatures[$first] = $creatures[$id] = $complement[$creatures[$first] | $creatures[$id]];
+      $creatures[$first] = $creatures[$id] =
+        $complement[$creatures[$first] | $creatures[$id]];
 
       $met_self[$first]++ if ($first == $id);
       $met[$first]++;  $met[$id]++;
@@ -118,6 +120,7 @@ sub pall_mall
   }
 
   $meetings->set(0);
+
   for (0 .. $#creatures) {
     print "\n$met[$_]", num2words($met_self[$_]);
     $meetings->incrby($met[$_]);

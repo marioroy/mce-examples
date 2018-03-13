@@ -21,10 +21,10 @@ die 'No argument given' if not @ARGV;
 my $start = time;
 my %color = ( blue => 1, red => 2, yellow => 4 );
 
-my @colors;
+my ( @colors, @complement );
+
 @colors[values %color] = keys %color;
 
-my @complement;
 for my $triple (
   [qw(blue blue blue)],
   [qw(red red red)],
@@ -36,7 +36,8 @@ for my $triple (
   [qw(yellow red blue)],
   [qw(yellow blue red)],
 ) {
-  $complement[ $color{$triple->[0]} | $color{$triple->[1]} ] = $color{$triple->[2]};
+  $complement[ $color{$triple->[0]} | $color{$triple->[1]} ] =
+    $color{$triple->[2]};
 }
 
 my @numbers = qw(zero one two three four five six seven eight nine);
@@ -80,6 +81,9 @@ sub chameneos
 
     if (defined (my $val = $first->get())) {
       my ($v1, $v2) = $creatures->mget($val, $id);
+
+      # The pipeline method is helpful for reducing the number
+      # of trips to the shared-manager process.
 
       $creatures->pipeline(
         [ 'set', $val, $v1 | $v2 ],
@@ -129,6 +133,7 @@ sub pall_mall
   }
 
   $meetings->set(0);
+
   for (0 .. $creatures->len() - 1) {
     print "\n".$met->get($_), num2words($met_self->get($_));
     $meetings->incrby($met->get($_));
