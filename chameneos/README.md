@@ -1,32 +1,34 @@
 chameneos-redux-examples
 ========================
 
-An adaptation of ["Chameneos, a Concurrency Game for Java, Ada, and Others"](http://benchmarksgame.alioth.debian.org/u64q/chameneosredux-description.html#chameneosredux) using Perl.
+An adaptation of ["Chameneos, a Concurrency Game for Java, Ada, and Others"](https://cedric.cnam.fr/PUBLIS/RC474.pdf) using Perl.
 
 Dependencies:
 
-  * threads, threads::shared, Thread::Queue 3.07 or later
-  * Cygwin/UNIX OS'es: MCE 1.833, MCE::Shared 1.834 or later
-  * Microsoft Windows: MCE 1.834, MCE::Shared 1.835 minimally
-  * Sereal::Encode 3.015, Sereal::Decode 3.015 or later (optional)
+  * MCE 1.839, MCE::Shared 1.841 minimally
+  * Sereal::Encode 3.015, Sereal::Decode 3.015 minimally (optional)
+  * threads, threads::shared (threading optional)
 
 Files:
 
-  * condvar1.pl  (MCE::Shared using TIE interface)
-  * condvar2.pl  (MCE::Shared using the OO interface)
-  * inbox1.pl    (MCE::Inbox, concurrency via threads)
-  * inbox2.pl    (MCE::Inbox, concurrency via MCE::Hobo)
-  * lib          (contains MCE::Inbox supporting threads and processes)
+  * channel1.pl  - MCE::Channel, concurrency via threads
+  * channel2.pl  - MCE::Channel, concurrency via MCE::Child
+  * condvar1.pl  - MCE::Shared using the TIE interface
+  * condvar2.pl  - MCE::Shared using the OO interface
+  * inbox1.pl    - MCE::Inbox, concurrency via threads
+  * inbox2.pl    - MCE::Inbox, concurrency via MCE::Hobo
+  * lib          - MCE::Inbox package resides here
 
 Running:
 
-  * perl condvar1.pl 6000
+  * perl channel1.pl 6000  # Perl 5.8 minimally
+  * perl channel2.pl 6000
+  * perl condvar1.pl 6000  # Perl 5.10.1 minimally
   * perl condvar2.pl 6000
-  * perl inbox1.pl 6000
-  * perl inbox2.pl 6000
+  * perl inbox1.pl   6000
+  * perl inbox2.pl   6000
 
 See Also:
 
-  * [chameneos-redux Perl #4 program](http://benchmarksgame.alioth.debian.org/u64q/program.php?test=chameneosredux&lang=perl&id=4)
   * [threads-lite chameneos-redux example](https://github.com/Leont/threads-lite/blob/master/examples/chameneos)
 

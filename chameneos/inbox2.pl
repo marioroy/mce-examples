@@ -7,15 +7,15 @@
 #    https://github.com/marioroy/mce-examples/tree/master/chameneos
 ##
 
-use 5.010;
-use strict;
-use warnings;
-
 BEGIN {
   require Cwd;
   my $prog_dir = Cwd::abs_path($0); $prog_dir =~ s{[\\/][^\\/]*$}{};
   unshift @INC, "$prog_dir/lib";
 }
+
+use 5.010;
+use strict;
+use warnings;
 
 use MCE::Hobo;
 use MCE::Inbox;
@@ -23,9 +23,9 @@ use Time::HiRes 'time';
 
 die 'No argument given' if not @ARGV;
 
-my $start = time;
 my @names = map { 'name'.$_ } 0..10;
 my $inbox = MCE::Inbox->new(@names);
+my $start = time;
 
 my @creature_colors = qw(blue red yellow);
 my %complement;

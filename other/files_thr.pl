@@ -19,8 +19,8 @@ my $F = Thread::Queue->new;
 ## Glob() is not thread-safe in Perl 5.16.x; okay < 5.16, fixed in 5.18.2.
 ## Not all OS vendors have patched 5.16.x.
 
-my $providers = ($INC{'threads.pm'} && ($] >= 5.016000 && $] < 5.018002)) ? 1 : 3;
-my $consumers = 8;
+my $providers = ($INC{'threads.pm'} && ($] >= 5.016000 && $] < 5.018002)) ? 1 : 2;
+my $consumers = 6;
 
 my $mce = MCE->new(
 
@@ -35,13 +35,16 @@ my $mce = MCE->new(
       user_func => sub {
          ## Allow time for wid 1 to enqueue any dir entries.
          ## Otherwise, workers (wid 2+) may terminate early.
-         sleep 0.1 if MCE->task_wid > 1;
+         sleep 0.15 if MCE->task_wid > 1;
 
          while (defined (my $dir = $D->dequeue_nb)) {
-            my (@files, @dirs); foreach (glob("$dir/*")) {
+            my (@files, @dirs);
+
+            foreach (glob("$dir/*")) {
                if (-d $_) { push @dirs, $_; next; }
                push @files, $_;
             }
+
             $D->enqueue(@dirs ) if scalar @dirs;
             $F->enqueue(@files) if scalar @files;
          }

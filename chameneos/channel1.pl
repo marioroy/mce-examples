@@ -3,7 +3,7 @@
 #  Derived from chameneos example by Leon Timmermans.
 #    https://github.com/Leont/threads-lite/blob/master/examples/chameneos
 #
-#  Example using MCE::Inbox supporting threads and processes by Mario Roy.
+#  Example using MCE::Channel supporting threads and processes by Mario Roy.
 #    https://github.com/marioroy/mce-examples/tree/master/chameneos
 ##
 
@@ -13,18 +13,16 @@ BEGIN {
   unshift @INC, "$prog_dir/lib";
 }
 
-use 5.010;
 use strict;
 use warnings;
 
 use threads;
-use MCE::Inbox;
+use MCE::Channel;
 use Time::HiRes 'time';
 
 die 'No argument given' if not @ARGV;
 
-my @names = map { 'name'.$_ } 0..10;
-my $inbox = MCE::Inbox->new(@names);
+my @chnls = map { MCE::Channel->new( impl => 'Simple' ) } 0..10;
 my $start = time;
 
 my @creature_colors = qw(blue red yellow);
@@ -48,10 +46,10 @@ sub complement {
 sub show_complement {
   foreach my $c1 (@creature_colors) {
     foreach my $c2 (@creature_colors) {
-      say "$c1 + $c2 -> ". $complement{$c1,$c2};
+      print "$c1 + $c2 -> ". $complement{$c1,$c2} ."\n";
     }
   }
-  say '';
+  print "\n";
 }
 
 sub spellout {
@@ -62,16 +60,16 @@ sub spellout {
 
 sub print_header {
   my @args = @_;
-  say ' ', join ' ', @args;
+  print ' ', join(' ', @args), "\n";
 }
 
 sub run {
   my ($num, $list) = @_;
-  my $broker = $names[0];
+  my $broker = 0;
   print_header(@{$list});
 
   my @threads =
-    map { threads->create(\&cameneos, $broker, $names[$_+1], $list->[$_])
+    map { threads->create(\&cameneos, $broker, $_+1, $list->[$_])
         } 0 .. @{$list} - 1;
 
   broker($broker, $num);
@@ -84,11 +82,11 @@ sub cameneos {
 
   my $continue = 1;
   while ($continue) {
-    $inbox->send($broker, $self, $color);
-    local @_ = $inbox->recv($self);
+    $chnls[$broker]->send($self, $color);
+    local @_ = $chnls[$self]->recv();
     if ($_[0] eq 'stop') {
-      say $meetings, spellout($metself);
-      $inbox->send($broker, $meetings);
+      print $meetings, spellout($metself), "\n";
+      $chnls[$broker]->send($meetings);
       $continue = 0;
     }
     else {
@@ -103,10 +101,10 @@ sub cameneos {
 sub broker {
   my ($broker, $num) = @_;
   while ($num--) {
-    my ($id1) = my @c1 = $inbox->recv($broker);
-    my ($id2) = my @c2 = $inbox->recv($broker);
-    $inbox->send($id1, @c2);
-    $inbox->send($id2, @c1);
+    my ($id1) = my @c1 = $chnls[$broker]->recv();
+    my ($id2) = my @c2 = $chnls[$broker]->recv();
+    $chnls[$id1]->send(@c2);
+    $chnls[$id2]->send(@c1);
   }
 }
 
@@ -115,10 +113,10 @@ sub cleanup {
   my $total_meetings = 0;
 
   while ($num) {
-    local @_ = $inbox->recv($broker);
+    local @_ = $chnls[$broker]->recv();
     if (@_ == 2) {
       my ($id, $color) = @_;
-      $inbox->send($id, 'stop');
+      $chnls[$id]->send('stop');
     }
     else {
       my ($meetings) = @_;
@@ -129,8 +127,8 @@ sub cleanup {
 
   $_->join() for @{$threads};
 
-  say spellout($total_meetings);
-  say '';
+  print spellout($total_meetings), "\n";
+  print "\n";
 
   return;
 }

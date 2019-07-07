@@ -18,8 +18,8 @@ use Time::HiRes 'time';
 
 die 'No argument given' if not @ARGV;
 
-my $start = time;
 my %color = ( blue => 1, red => 2, yellow => 4 );
+my $start = time;
 
 my ( @colors, @complement );
 

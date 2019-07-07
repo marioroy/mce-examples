@@ -22,7 +22,7 @@ my $num_workers   = 8;
 my $count :shared = 0;
 my $state :shared = 'ready';
 
-my $microsecs = ( lc $^O =~ /mswin|mingw|msys|cygwin/ ) ? 0 : 200;
+my $microsecs = ( $^O =~ /mswin|mingw|msys|cygwin/i ) ? 0 : 200;
 
 sub barrier_sync {
    usleep($microsecs) while $state eq 'down';

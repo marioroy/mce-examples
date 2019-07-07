@@ -4,7 +4,7 @@ MCE::Inbox - Channel-like messaging supporting threads and processes
 
 =head1 VERSION
 
-This document describes MCE::Inbox version 0.001
+This document describes MCE::Inbox version 0.002
 
 =head1 SYNOPSIS
 
@@ -21,11 +21,10 @@ This document describes MCE::Inbox version 0.001
 
 =head1 DESCRIPTION
 
-A MCE::Inbox is a shared container for sending and receiving messages via
-L<Thread::Queue>, when C<threads> is present, or L<MCE::Shared::Queue>
-otherwise. Serialization is provided by L<Sereal> if available or L<Storable>.
-Both ends of the C<inbox> for a given ID can be read and written by as many
-workers as you want concurrently.
+A MCE::Inbox object is a container for sending and receiving messages using
+L<MCE::Shared::Queue>. Serialization is provided by L<Sereal> if available.
+Defaults to L<Storable> otherwise. Both ends of the C<inbox> for the given ID
+can be read and written by as many workers as you want concurrently.
 
 =over 3
 
@@ -75,35 +74,37 @@ Send a message to an ID or list of IDs.
 
 =item size ( [ $id ] )
 
-Acquire the number of messages pending for given ID or list of IDs.
+Acquire the number of messages pending for the given ID or all IDs.
 
  $count = $inbox->size('foo');
  %pairs = $inbox->size();
 
-=item end ( [ $id ] )
+=item end ( $id )
 
-Signal that there is no more work to be sent for given ID. Omitting an ID
-will end all IDs. Once ended, no more messages may be sent.
+=item end ( \@list )
+
+=item end ( )
+
+Signal that there is no more work to be sent for the given ID or list of IDs.
+Omitting an ID will end all IDs. Once ended, no more messages may be sent.
 
  $inbox->end('foo');
+ $inbox->end([ 'bar', 'baz']);
  $inbox->end();
 
 =back
 
 =head1 REQUIREMENTS
 
-MCE::Inbox requires Perl 5.10.1 or later and MCE::Shared 1.834 minimally.
-
-On Microsoft Windows, please use MCE::Shared 1.835 for improved C<dequeue>
-performance using MCE::Queue or MCE::Shared->queue. The fix is in MCE::Util
-1.834. Loading threads first before this module will use Thread::Queue.
-It must be 3.07 or later with C<end> and C<limit> capabilities.
+MCE::Inbox requires Perl 5.10.1 and MCE::Shared 1.841 minimally.
 
 =head1 SEE ALSO
 
 =over 3
 
 =item * L<https://github.com/marioroy/mce-examples/tree/master/chameneos>
+
+=item * L<MCE::Channel>
 
 =back
 
@@ -113,7 +114,7 @@ Mario E. Roy, S<E<lt>marioeroy AT gmail DOT comE<gt>>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2018 by Mario E. Roy
+Copyright (C) 2019 by Mario E. Roy
 
 MCE::Inbox is released under the same license as Perl.
 
