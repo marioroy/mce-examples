@@ -15,7 +15,6 @@ use Time::HiRes qw(time);
 use PDL;
 use PDL::Parallel::threads qw(retrieve_pdls free_pdls);
 
-use MCE::Signal qw($tmp_dir -use_dev_shm);
 use MCE;
 
 ###############################################################################

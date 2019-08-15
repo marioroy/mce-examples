@@ -16,7 +16,6 @@ use PDL;
 use File::Map;
 use PDL::IO::FastRaw;
 
-use MCE::Signal qw($tmp_dir -use_dev_shm);
 use MCE;
 
 ###############################################################################

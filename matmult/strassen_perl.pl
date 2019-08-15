@@ -12,7 +12,6 @@ my $prog_name = $0; $prog_name =~ s{^.*[\\/]}{}g;
 
 use Time::HiRes qw(time);
 
-use MCE::Signal qw($tmp_dir -use_dev_shm);
 use MCE;
 
 ###############################################################################
