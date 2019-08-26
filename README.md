@@ -17,7 +17,10 @@ They are organized into sub-directories.
         Various adaptations of "Chameneos, a Concurrency Game" using Perl.
 
     fibonacci/ fibprime-hobo.pl, fibprime-mce.pl, fibprime-threads.pl
-        Math::Prime::Util parallel demonstration
+        Math::Prime::Util parallel demonstrations
+
+    framebuffer/ *chnl_primitives.pl, *hobo_primitives.pl, *hobo_slideshow.pl
+        Graphics::Framebuffer parallel demonstrations
 
     gearman/ reverse_client*.pl, reverse_worker*.pl (using non-XS module)
         Gearman + MCE parallel demonstrations
