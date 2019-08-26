@@ -1,8 +1,7 @@
 
 ### Parallel Graphics::Framebuffer demonstrations
 
-Copy the Perl demonstrations to the Graphics::Framebuffer examples folder
-and run from there.
+Copy the MCE demonstrations to the [Graphics::Framebuffer](https://metacpan.org/pod/Graphics::Framebuffer) examples folder and run from there.
 
 ```
  mcechnl_primitives.pl  - based on threaded_primitives.pl [1]
