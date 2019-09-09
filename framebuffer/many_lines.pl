@@ -9,7 +9,7 @@ use Time::HiRes qw(sleep);
 use Getopt::Long;
 use Pod::Usage;
 
-use MCE::Child 1.849; # minimum version requirement
+use MCE::Child 1.850; # minimum version requirement
 
 package App::Framebuffer {
     use base 'Graphics::Framebuffer';
