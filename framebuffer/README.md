@@ -4,9 +4,12 @@
 Copy the MCE demonstrations to the [Graphics::Framebuffer](https://metacpan.org/pod/Graphics::Framebuffer) examples folder and run from there.
 
 ```
- mcechnl_primitives.pl  - based on threaded_primitives.pl [1]
- mcehobo_primitives.pl  - based on threaded_primitives.pl [1]
- mcehobo_slideshow.pl   - based on threaded_slidshow.pl   [2]
+ many_boxes.pl          - Draw many boxes using MCE::Hobo
+ many_ellipses.pl       - Draw many ellipses using threads
+ many_lines             - Draw many lines using MCE::Child
+ mcechnl_primitives.pl  - Based on threaded_primitives.pl [1]
+ mcehobo_primitives.pl  - Based on threaded_primitives.pl [1]
+ mcehobo_slideshow.pl   - Based on threaded_slidshow.pl   [2]
 ```
 
 ### How to enable the framebuffer on CentOS 7.
