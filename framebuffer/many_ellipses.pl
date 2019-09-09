@@ -34,7 +34,7 @@ package App::Framebuffer {
 
 my $dev      = 0;
 my $delay    = 0.010;
-my $nitems   = 40;
+my $nitems   = 50;
 my $noerase  = 0;
 my $nworkers = 2;
 my $runmode  = 1;
@@ -74,7 +74,7 @@ my $F = MCE::Shared->share( { module => 'App::Framebuffer' },
 
 $F->cls('OFF');
 
-use constant { NUMCOLORS => 96, DELTA => 7, OFFSET => 4 };
+use constant { NUMCOLORS => 96, DELTA => 9, OFFSET => 3 };
 use constant { X1 => 0, Y1 => 1, X2 => 2, Y2 => 3 };
 
 my ( $x1, $y1, $x2, $y2, $dx1, $dy1, $dx2, $dy2 );
@@ -381,7 +381,7 @@ Default is 0.010 seconds.
 
 =item B<-nitems>=2-999
 
-The number of ellipses per set; default 40.
+The number of ellipses per set; default 50.
 
 =item B<-noerase>
 
