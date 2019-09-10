@@ -44,10 +44,10 @@ This is how I enabled the framebuffer inside a CentOS 7 virtual machine.
 ### References
 
 1. ** Richard Kelsch.
-   https://metacpan.org/pod/Graphics::Framebuffer v6.34
+   https://metacpan.org/pod/Graphics::Framebuffer v6.35
    examples dir: threaded_primitives.pl
 
 2. ** Richard Kelsch.
-   https://metacpan.org/pod/Graphics::Framebuffer v6.34
+   https://metacpan.org/pod/Graphics::Framebuffer v6.35
    examples dir: threaded_slideshow.pl
 

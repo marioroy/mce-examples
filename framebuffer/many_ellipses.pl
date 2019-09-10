@@ -4,7 +4,7 @@
 
 use strict;
 
-use Graphics::Framebuffer 6.34; # minimum version requirement
+use Graphics::Framebuffer 6.35; # minimum version requirement
 use Time::HiRes qw(sleep);
 use Getopt::Long;
 use Pod::Usage;
