@@ -81,6 +81,9 @@ exec('reset');
 sub loop {
     my ( $id, $dev ) = @_;
 
+    # ignore ctrl-c, handled by the main process
+    local $SIG{INT} = sub {};
+
     $F = App::Framebuffer->new(
         'FB_DEVICE'   => "/dev/fb$dev",
         'ACCELERATED' => 1,
