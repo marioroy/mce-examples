@@ -4,7 +4,7 @@
 
 use strict;
 
-use Graphics::Framebuffer;
+use Graphics::Framebuffer 6.34; # minimum version requirement
 use Time::HiRes qw(sleep);
 use Getopt::Long;
 use Pod::Usage;
@@ -123,8 +123,6 @@ sub loop {
 
         sleep $delay;
     }
-
-    eval { $F->DESTROY };
 
     return;
 }
