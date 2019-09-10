@@ -104,9 +104,6 @@ exec('reset');
 sub loop {
     my ( $id, $dev ) = @_;
 
-    # ignore ctrl-c, handled by the main process
-    local $SIG{INT} = sub {};
-
     unless ( $sharedfb ) {
         $F = App::Framebuffer->new(
             'FB_DEVICE'   => "/dev/fb$dev",
@@ -148,6 +145,8 @@ sub loop {
 
         sleep $delay;
     }
+
+    eval { $F->DESTROY } unless $sharedfb;
 
     return;
 }
