@@ -29,6 +29,8 @@ package App::Framebuffer {
             x => $cx + $xradius, xradius => $xradius,
             y => $cy + $yradius, yradius => $yradius,
         });
+
+        $self->vsync();
     }
 };
 
@@ -54,6 +56,7 @@ GetOptions(
 
 pod2usage('-exitstatus' => 1, '-verbose' => $help) if $help;
 
+$delay    =   0 if ( $delay    <   0 );
 $nitems   =   2 if ( $nitems   <   2 );
 $nitems   = 999 if ( $nitems   > 999 );
 $nworkers =   1 if ( $nworkers <   1 );
@@ -146,7 +149,7 @@ sub loop {
 
         $i = ( $i + 1 ) % $nitems;
 
-        sleep $delay;
+        sleep($delay) if $delay;
     }
 
     return;
