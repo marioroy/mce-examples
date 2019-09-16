@@ -34,6 +34,7 @@ my $delay            = 3;
 my $nosplash         = FALSE;
 my $show_names       = FALSE;
 my $noaccel          = FALSE;
+my $heads            = 1;
 my $threads          = Sys::CPU::cpu_count() * 2;
 tie my $RUNNING, 'MCE::Shared', TRUE;
 my $default_path     = '.';
@@ -49,6 +50,7 @@ GetOptions(
     'showall|all'  => \$showall,
     'help'         => \$help,
     'delay|wait=i' => \$delay,
+    'heads=i'      => \$heads,
     'nosplash'     => \$nosplash,
     'noaccel'      => \$noaccel,
     'threads=i'    => \$threads,
@@ -76,7 +78,9 @@ foreach my $dev (0 .. 31) {
         if (-e "/dev/$path$dev") {
             push(@devs,"/dev/$path$dev");
         }
+        last if (scalar(@devs) >= $heads);
     }
+    last if (scalar(@devs) >= $heads);
 }
 
 $SIG{'QUIT'} = $SIG{'INT'} = $SIG{'KILL'} = $SIG{'TERM'} = $SIG{'HUP'} = \&finish;
@@ -458,7 +462,7 @@ sub show {
                     sleep $tdelay * $RUNNING;
                 } else {
                     while (! $GO && $RUNNING) {
-                        MCE::Hobo->yield();
+                        MCE::Hobo->yield(0.05);
                     }
                 }
             }
@@ -475,8 +479,8 @@ sub show {
                         # Multiply the 'gif_delay' by 0.01 and then subtract from that the amount of time
                         # it took to actually display the frame.  This givs the true delay, which should
                         # show an accurate animation.
+                        MCE::Hobo->yield(0.001); # Yielding takes time, and the delay calculation should be after.
                         my $d = (($image->[$frame]->{'tags'}->{'gif_delay'} * .01) - (time - $begin));
-                        MCE::Hobo->yield();
                         sleep $d if ($d > 0);
                         last unless ($RUNNING);
                     } ## end for (my $frame = 0; $frame...)
@@ -487,7 +491,7 @@ sub show {
                     $image->{'x'} += $x;
                 }
                 $FB->blit_write($image);
-                MCE::Hobo->yield();
+                MCE::Hobo->yield(0.001);
             }
         } ## end if (defined($image))
         $idx++;

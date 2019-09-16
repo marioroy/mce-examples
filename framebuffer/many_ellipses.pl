@@ -5,9 +5,10 @@
 use strict;
 
 use Graphics::Framebuffer 6.35; # minimum version requirement
-use Time::HiRes qw(sleep);
+use Time::HiRes qw( sleep );
 use Getopt::Long;
 use Pod::Usage;
+use List::Util qw( max min );
 
 use threads stack_size => 131072;
 use MCE::Shared;
@@ -56,13 +57,10 @@ GetOptions(
 
 pod2usage('-exitstatus' => 1, '-verbose' => $help) if $help;
 
-$delay    =   0 if ( $delay    <   0 );
-$nitems   =   2 if ( $nitems   <   2 );
-$nitems   = 999 if ( $nitems   > 999 );
-$nworkers =   1 if ( $nworkers <   1 );
-$nworkers =  20 if ( $nworkers >  20 );
-$runmode  =   0 if ( $runmode  <   0 );
-$runmode  =   4 if ( $runmode  >   4 );
+$delay    = max(0, min( 10, $delay   ));
+$nitems   = max(2, min(999, $nitems  ));
+$nworkers = max(1, min( 20, $nworkers));
+$runmode  = max(0, min(  4, $runmode ));
 
 # Construct a shared framebuffer (resides under the shared-manager process).
 # The shared-object is accessible via the OO interface only.
@@ -89,7 +87,8 @@ my $screen_height = $screen_info->{height};
 
 my $DONE = MCE::Shared->scalar( FALSE );
 
-$SIG{HUP} = $SIG{INT} = $SIG{QUIT} = $SIG{TERM} = sub {
+$SIG{HUP} = $SIG{INT} = $SIG{TERM} = sub {
+    local $SIG{HUP} = local $SIG{INT} = local $SIG{TERM} = sub {};
     $DONE->set( TRUE );
 };
 
@@ -106,9 +105,6 @@ exec('reset');
 
 sub loop {
     my ( $id, $dev ) = @_;
-
-    # ignore ctrl-c, handled by the main process
-    local $SIG{INT} = sub {};
 
     unless ( $sharedfb ) {
         $F = App::Framebuffer->new(
@@ -214,8 +210,8 @@ sub getStartingCoordinates {
     my $temp;
 
     do {
-        $$n1  = rand( $max );
-        $$n2  = rand( $max );
+        $$n1  = int( rand $max );
+        $$n2  = int( rand $max );
         $temp = abs( $$n2 - $$n1 );
     } while ( $temp < 16 || $temp > 64 );
 }

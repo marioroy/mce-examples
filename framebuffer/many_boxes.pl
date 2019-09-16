@@ -5,11 +5,12 @@
 use strict;
 
 use Graphics::Framebuffer 6.35; # minimum version requirement
-use Time::HiRes qw(sleep);
+use Time::HiRes qw( sleep );
 use Getopt::Long;
 use Pod::Usage;
+use List::Util qw( max min );
 
-use MCE::Hobo 1.850; # minimum version requirement
+use MCE::Hobo 1.860; # minimum version requirement
 use MCE::Shared;
 
 package App::Framebuffer {
@@ -28,6 +29,7 @@ my $delay    = 0.010;
 my $nitems   = 50;
 my $noerase  = 0;
 my $nworkers = 2;
+my $radius   = 0;
 my $runmode  = 1;
 my $sharedfb = 0;
 my $help     = 0;
@@ -38,6 +40,7 @@ GetOptions(
     'nitems=i'   => \$nitems,
     'noerase'    => \$noerase,
     'nworkers=i' => \$nworkers,
+    'radius=i'   => \$radius,
     'runmode=i'  => \$runmode,
     'sharedfb'   => \$sharedfb,
     'help'       => \$help,
@@ -45,13 +48,11 @@ GetOptions(
 
 pod2usage('-exitstatus' => 1, '-verbose' => $help) if $help;
 
-$delay    =   0 if ( $delay    <   0 );
-$nitems   =   2 if ( $nitems   <   2 );
-$nitems   = 999 if ( $nitems   > 999 );
-$nworkers =   1 if ( $nworkers <   1 );
-$nworkers =  20 if ( $nworkers >  20 );
-$runmode  =   0 if ( $runmode  <   0 );
-$runmode  =   4 if ( $runmode  >   4 );
+$delay    = max(0, min( 10, $delay   ));
+$nitems   = max(2, min(999, $nitems  ));
+$nworkers = max(1, min( 20, $nworkers));
+$radius   = max(0, min( 80, $radius  ));
+$runmode  = max(0, min(  4, $runmode ));
 
 # Construct a shared framebuffer (resides under the shared-manager process).
 # The shared-object is accessible via the OO interface only.
@@ -78,7 +79,8 @@ my $screen_height = $screen_info->{height};
 
 my $DONE = MCE::Shared->scalar( FALSE );
 
-$SIG{HUP} = $SIG{INT} = $SIG{QUIT} = $SIG{TERM} = sub {
+$SIG{HUP} = $SIG{INT} = $SIG{TERM} = sub {
+    local $SIG{HUP} = local $SIG{INT} = local $SIG{TERM} = sub {};
     $DONE->set( TRUE );
 };
 
@@ -93,9 +95,6 @@ exec('reset');
 
 sub loop {
     my ( $id, $dev ) = @_;
-
-    # ignore ctrl-c, handled by the main process
-    local $SIG{INT} = sub {};
 
     unless ( $sharedfb ) {
         $F = App::Framebuffer->new(
@@ -147,24 +146,24 @@ sub draw {
 
     $F->box2( $r, $g, $b, {
         x  => $b[$index][X1], y  => $b[$index][Y1],
-        xx => $b[$index][X2], yy => $b[$index][Y2],
+        xx => $b[$index][X2], yy => $b[$index][Y2], radius => $radius,
     });
     if ( $runmode == 1 || $runmode == 4 ) {
         $F->box2( $r, $g, $b, {
             x  => $c[$index][X1], y  => $c[$index][Y1],
-            xx => $c[$index][X2], yy => $c[$index][Y2],
+            xx => $c[$index][X2], yy => $c[$index][Y2], radius => $radius,
         });
     }
     if ( $runmode == 2 || $runmode == 4 ) {
         $F->box2( $r, $g, $b, {
             x  => $b[$index][X1], y  => $c[$index][Y1],
-            xx => $b[$index][X2], yy => $c[$index][Y2],
+            xx => $b[$index][X2], yy => $c[$index][Y2], radius => $radius,
         });
     }
     if ( $runmode == 3 || $runmode == 4 ) {
         $F->box2( $r, $g, $b, {
             x  => $c[$index][X1], y  => $b[$index][Y1],
-            xx => $c[$index][X2], yy => $b[$index][Y2],
+            xx => $c[$index][X2], yy => $b[$index][Y2], radius => $radius,
         });
     }
 }
@@ -201,8 +200,8 @@ sub getStartingCoordinates {
     my $temp;
 
     do {
-        $$n1  = rand( $max );
-        $$n2  = rand( $max );
+        $$n1  = int( rand $max );
+        $$n2  = int( rand $max );
         $temp = abs( $$n2 - $$n1 );
     } while ( $temp < 16 || $temp > 64 );
 }
@@ -380,6 +379,12 @@ Keep older boxes on the screen.
 =item B<-nworkers>=1-20
 
 The number of workers to run; default 2.
+
+=item B<-radius>=0-80
+
+If greater than zero, draws boxes with rounded corners, but the given radius.
+
+Default is 0.
 
 =item B<-runmode>=0-4
 

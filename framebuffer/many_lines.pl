@@ -5,11 +5,12 @@
 use strict;
 
 use Graphics::Framebuffer 6.35; # minimum version requirement
-use Time::HiRes qw(sleep);
+use Time::HiRes qw( sleep );
 use Getopt::Long;
 use Pod::Usage;
+use List::Util qw( max min );
 
-use MCE::Child 1.850; # minimum version requirement
+use MCE::Child 1.860; # minimum version requirement
 
 package App::Framebuffer {
     use base 'Graphics::Framebuffer';
@@ -42,13 +43,10 @@ GetOptions(
 
 pod2usage('-exitstatus' => 1, '-verbose' => $help) if $help;
 
-$delay    =   0 if ( $delay    <   0 );
-$nitems   =   2 if ( $nitems   <   2 );
-$nitems   = 999 if ( $nitems   > 999 );
-$nworkers =   1 if ( $nworkers <   1 );
-$nworkers =  20 if ( $nworkers >  20 );
-$runmode  =   0 if ( $runmode  <   0 );
-$runmode  =   4 if ( $runmode  >   4 );
+$delay    = max(0, min( 10, $delay   ));
+$nitems   = max(2, min(999, $nitems  ));
+$nworkers = max(1, min( 20, $nworkers));
+$runmode  = max(0, min(  4, $runmode ));
 
 my $F = App::Framebuffer->new(
     'FB_DEVICE'   => "/dev/fb$dev",
@@ -70,8 +68,13 @@ my $screen_info   = $F->screen_dimensions();
 my $screen_width  = $screen_info->{width};
 my $screen_height = $screen_info->{height};
 
-$SIG{HUP} = $SIG{INT} = $SIG{QUIT} = $SIG{TERM} = sub {
-    CORE::kill('QUIT', MCE::Child->list_pids());
+my $done = FALSE;
+
+$SIG{HUP} = $SIG{INT} = $SIG{TERM} = sub {
+    local $SIG{HUP} = local $SIG{INT} = local $SIG{TERM} = sub {};
+    kill('INT', MCE::Child->list_pids());
+    # set so that new workers do not enter the while loop if ctrl-c early
+    $done = TRUE;
 };
 
 # press ctrl-c to stop
@@ -82,9 +85,6 @@ exec('reset');
 
 sub loop {
     my ( $id, $dev ) = @_;
-
-    # ignore ctrl-c, handled by the main process
-    local $SIG{INT} = sub {};
 
     $F = App::Framebuffer->new(
         'FB_DEVICE'   => "/dev/fb$dev",
@@ -97,7 +97,7 @@ sub loop {
     initColors();
     initBuffers();
 
-    while () {
+    while ( ! $done ) {
         # Erase old
         unless ( $noerase ) {
             $j = ( $j + 1 ) % $nitems;
@@ -188,8 +188,8 @@ sub getStartingCoordinates {
     my $temp;
 
     do {
-        $$n1  = rand( $max );
-        $$n2  = rand( $max );
+        $$n1  = int( rand $max );
+        $$n2  = int( rand $max );
         $temp = abs( $$n2 - $$n1 );
     } while ( $temp < 16 || $temp > 64 );
 }
