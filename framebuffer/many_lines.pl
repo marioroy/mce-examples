@@ -10,7 +10,7 @@ use Getopt::Long;
 use Pod::Usage;
 use List::Util qw( max min );
 
-use MCE::Child 1.861; # minimum version requirement
+use MCE::Child 1.862; # minimum version requirement
 
 package App::Framebuffer {
     use base 'Graphics::Framebuffer';

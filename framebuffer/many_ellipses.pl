@@ -11,7 +11,7 @@ use Pod::Usage;
 use List::Util qw( max min );
 
 use threads stack_size => 131072;
-use MCE::Shared 1.861; # minimum version requirement
+use MCE::Shared 1.862; # minimum version requirement
 
 package App::Framebuffer {
     use base 'Graphics::Framebuffer';

@@ -10,7 +10,7 @@ use Getopt::Long;
 use Pod::Usage;
 use List::Util qw( max min );
 
-use MCE::Hobo 1.861; # minimum version requirement
+use MCE::Hobo 1.862; # minimum version requirement
 use MCE::Shared;
 
 package App::Framebuffer {
