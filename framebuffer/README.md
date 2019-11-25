@@ -1,7 +1,7 @@
 
 ### Parallel Graphics::Framebuffer demonstrations
 
-Copy the MCE demonstrations to the [Graphics::Framebuffer](https://metacpan.org/pod/Graphics::Framebuffer) examples folder and run from there.
+Copy the MCE demonstrations to the [Graphics::Framebuffer](https://metacpan.org/pod/Graphics::Framebuffer) examples/multiprocessing folder and run from there.
 
 ```
  many_boxes.pl          - Draw many boxes using MCE::Hobo
@@ -44,10 +44,10 @@ This is how I enabled the framebuffer inside a CentOS 7 virtual machine.
 ### References
 
 1. ** Richard Kelsch.
-   https://metacpan.org/pod/Graphics::Framebuffer v6.35
-   examples dir: threaded_primitives.pl
+   https://metacpan.org/pod/Graphics::Framebuffer v6.37
+   examples/multiprocessing/threaded_primitives.pl
 
 2. ** Richard Kelsch.
-   https://metacpan.org/pod/Graphics::Framebuffer v6.35
-   examples dir: threaded_slideshow.pl
+   https://metacpan.org/pod/Graphics::Framebuffer v6.37
+   examples/multiprocessing/threaded_slideshow.pl
 

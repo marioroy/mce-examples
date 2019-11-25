@@ -4,13 +4,13 @@
 
 use strict;
 
-use Graphics::Framebuffer 6.35; # minimum version requirement
+use Graphics::Framebuffer;
 use Time::HiRes qw( sleep );
 use Getopt::Long;
 use Pod::Usage;
 use List::Util qw( max min );
 
-use MCE::Child 1.862; # minimum version requirement
+use MCE::Child 1.863; # minimum version requirement
 
 package App::Framebuffer {
     use base 'Graphics::Framebuffer';
@@ -70,21 +70,28 @@ my $screen_height = $screen_info->{height};
 
 my $done = FALSE;
 
-$SIG{HUP} = $SIG{INT} = $SIG{TERM} = sub {
-    local $SIG{HUP} = local $SIG{INT} = local $SIG{TERM} = sub {};
+$SIG{INT} = $SIG{TERM} = sub {
+    return MCE::Signal::defer($_[0]) if $MCE::Signal::IPC;
     kill('INT', MCE::Child->list_pids());
-    # set so that new workers do not enter the while loop if ctrl-c early
+    # last worker spawned will not enter loop if ctrl-c early
     $done = TRUE;
 };
 
-# press ctrl-c to stop
-MCE::Child->create( \&loop, $_, $dev ) for 1..$nworkers;
+# press ctrl-c to stop the script
+
+for ( 1 .. $nworkers ) {
+    last if $done;
+    MCE::Child->create( \&loop, $_, $dev );
+}
+
 MCE::Child->wait_all();
 
 exec('reset');
 
 sub loop {
     my ( $id, $dev ) = @_;
+
+    # $SIG{INT} and $SIG{TERM} are set to exit in MCE::Child
 
     $F = App::Framebuffer->new(
         'FB_DEVICE'   => "/dev/fb$dev",

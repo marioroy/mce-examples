@@ -322,8 +322,6 @@ my $total_found = 0;
 my $total_lines = 0;
 my $order_id    = 1;
 
-keys(%result) = 4000;
-
 sub aggregate_count {
 
    my ($wk_count) = @_;

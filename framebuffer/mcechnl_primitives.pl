@@ -27,8 +27,6 @@ use Sys::CPU;
 
 # use Data::Dumper::Simple;$Data::Dumper::Sortkeys=1; $Data::Dumper::Purity=1; $Data::Dumper::Deepcopy=1;
 
-our $VERSION = '6.31';
-
 my $dev      = 0;
 my $psize    = 1;
 my $noaccel  = 0;
@@ -47,8 +45,17 @@ GetOptions(
 
 $noaccel = ($noaccel) ? TRUE : FALSE;    # Only 1 or 0 please
 
-my $images_path = (-e 'images/RWBY_White.jpg') ? 'images' : 'examples/images';
+my $images_path;
+{
+    foreach my $p ('images', '../images', 'examples/images') {
+        if (-e "$p/RWBY_White.jpg") {
+            $images_path = $p;
+            last;
+        }
+    }
+}
 
+my $start = time;
 my $splash = ($nosplash) ? 0 : 2;
 print "\n\nGathering images...\n";
 $|=1;
@@ -59,7 +66,6 @@ closedir($DIR);
 
 our $RUNNING = TRUE;
 our @IMAGES;
-our $STAMP = sprintf('%.1', time);
 
 my $F = Graphics::Framebuffer->new('FB_DEVICE' => "/dev/fb$dev", 'SHOW_ERRORS' => 0, 'ACCELERATED' => !$noaccel, 'SPLASH' => 0, 'RESET' => TRUE);
 
@@ -92,7 +98,7 @@ if ($rpi) {
 
 print_it($F, ' ', '00FFFFFF');
 $F->{'SPLASH'} = $splash;
-$F->splash($VERSION) unless ($nosplash);
+$F->splash($Graphics::Framebuffer::VERSION) unless ($nosplash);
 
 my $DORKSMILE;
 
@@ -313,6 +319,7 @@ sub load_image {
     local $SIG{'TERM'} = sub { $F->text_mode(); MCE::Child->exit(); };
     local $SIG{'HUP'}  = sub { $F->text_mode(); MCE::Child->exit(); };
 
+    MCE::Child->yield(0.05);
     print_it($F,"Loading Image > $file", '00FFFFFF', undef, 1);
 
     my $image = $F->load_image(
@@ -326,6 +333,12 @@ sub load_image {
             'center'       => CENTER_XY,
         }
     );
+
+    unless ($nosplash) {
+        my $delay = time - $start;
+        sleep(2.0 - $delay) if ($delay < 2.0);
+    }
+
     return($image);
 }
 

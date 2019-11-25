@@ -37,7 +37,7 @@ my $noaccel          = FALSE;
 my $heads            = 1;
 my $threads          = Sys::CPU::cpu_count() * 2;
 tie my $RUNNING, 'MCE::Shared', TRUE;
-my $default_path     = '.';
+my $default_path     = '../';
 my $new_x;
 my $new_y;
 tie my $GO, 'MCE::Shared', FALSE;

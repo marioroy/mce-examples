@@ -4,13 +4,13 @@
 
 use strict;
 
-use Graphics::Framebuffer 6.35; # minimum version requirement
+use Graphics::Framebuffer;
 use Time::HiRes qw( sleep );
 use Getopt::Long;
 use Pod::Usage;
 use List::Util qw( max min );
 
-use MCE::Hobo 1.862; # minimum version requirement
+use MCE::Hobo 1.863; # minimum version requirement
 use MCE::Shared;
 
 package App::Framebuffer {
@@ -77,24 +77,30 @@ my $screen_info   = $F->screen_dimensions();
 my $screen_width  = $screen_info->{width};
 my $screen_height = $screen_info->{height};
 
-my $DONE = MCE::Shared->scalar( FALSE );
+my $done = MCE::Shared->scalar( FALSE );
 
-$SIG{HUP} = $SIG{INT} = $SIG{TERM} = sub {
-    local $SIG{HUP} = local $SIG{INT} = local $SIG{TERM} = sub {};
-    $DONE->set( TRUE );
+$SIG{INT} = $SIG{TERM} = sub {
+    return MCE::Signal::defer($_[0]) if $MCE::Signal::IPC;
+    $done->set( TRUE );
 };
 
-# press ctrl-c to stop
-MCE::Hobo->create( \&loop, $_, $dev ) for 1..$nworkers;
-MCE::Hobo->wait_all();
+# press ctrl-c to stop the script
+# must also stop the shared-manager before exec
 
-# must stop the shared-manager before exec
+for ( 1 .. $nworkers ) {
+    last if $done->get();
+    MCE::Hobo->create( \&loop, $_, $dev );
+}
+
+MCE::Hobo->wait_all();
 MCE::Shared->stop();
 
 exec('reset');
 
 sub loop {
     my ( $id, $dev ) = @_;
+
+    # $SIG{INT} and $SIG{TERM} are set to exit in MCE::Hobo
 
     unless ( $sharedfb ) {
         $F = App::Framebuffer->new(
@@ -109,7 +115,7 @@ sub loop {
     initColors();
     initBuffers();
 
-    while ( ! $DONE->get() ) {
+    while ( ! $done->get() ) {
         # Erase old
         unless ( $noerase ) {
             $j = ( $j + 1 ) % $nitems;
