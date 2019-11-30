@@ -22,12 +22,12 @@ This is how I enabled the framebuffer inside a CentOS 7 virtual machine.
 
  1. systemctl set-default multi-user.target
 
- 2. append vga=0x317 to GRUB_CMDLINE_LINUX line in /etc/default/grub.conf
+ 2. append vga=0x317 to GRUB_CMDLINE_LINUX line in /etc/default/grub
 
  3. grub2-mkconfig -o /boot/grub2/grub.cfg
+    note: mount /boot if not mounted
 
  4. add the user to the 'video' group in /etc/group
-
     video:x:39:mario
 
  5. reboot
