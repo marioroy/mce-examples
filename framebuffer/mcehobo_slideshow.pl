@@ -3,17 +3,19 @@
 # Fixes to center image in its own assigned block.
 
 ##
-# Based on Graphics::Framebuffer/examples/threaded_slideshow.pl.
+# Based on:
+#   Graphics::Framebuffer/examples/multiprocessing/threaded_slideshow.pl
 #
 # This uses MCE::Hobo and MCE::Shared instead and works with Perl lacking
-# threads support.
+# threads support. The default delay for MCE::Hobo->yield is 0.008 seconds
+# on UNIX platforms. Passing 0 below.
 #
 # Sunday, August 25, 2019
 ##
 
 use strict;
 
-use MCE::Hobo;
+use MCE::Hobo 1.864; # minimum version required
 use MCE::Shared;
 use Graphics::Framebuffer;
 use Time::HiRes qw(sleep time alarm);
@@ -479,7 +481,7 @@ sub show {
                         # Multiply the 'gif_delay' by 0.01 and then subtract from that the amount of time
                         # it took to actually display the frame.  This givs the true delay, which should
                         # show an accurate animation.
-                        MCE::Hobo->yield(0.001); # Yielding takes time, and the delay calculation should be after.
+                        MCE::Hobo->yield(0); # Yielding takes time, and the delay calculation should be after.
                         my $d = (($image->[$frame]->{'tags'}->{'gif_delay'} * .01) - (time - $begin));
                         sleep $d if ($d > 0);
                         last unless ($RUNNING);
@@ -491,7 +493,7 @@ sub show {
                     $image->{'x'} += $x;
                 }
                 $FB->blit_write($image);
-                MCE::Hobo->yield(0.001);
+                MCE::Hobo->yield(0);
             }
         } ## end if (defined($image))
         $idx++;

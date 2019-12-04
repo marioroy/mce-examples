@@ -6,18 +6,19 @@
 ##############################################################################
 
 ##
-# Based on Graphics::Framebuffer/examples/threaded_primitives.pl.
+# Based on:
+#   Graphics::Framebuffer/examples/multiprocessing/threaded_primitives.pl
 #
 # This uses MCE::Child and MCE::Channel instead and works with Perl lacking
 # threads support. The default delay for MCE::Child->yield is 0.008 seconds
-# on UNIX platforms. Passing 0.0002 below.
+# on UNIX platforms. Passing 0 below.
 #
 # Sunday, August 25, 2019
 ##
 
 use strict;
 
-use MCE::Child;
+use MCE::Child 1.864; # minimum version required
 use MCE::Channel;
 use Graphics::Framebuffer;
 use List::Util qw(min max shuffle);
@@ -102,26 +103,34 @@ $F->splash($Graphics::Framebuffer::VERSION) unless ($nosplash);
 
 my $DORKSMILE;
 
-my @th_images;
-
 foreach my $file (@files) {
     next if ($file =~ /^\.+/ || $file =~ /Test|gif/i || -d "$images_path/$file");
-    push(@th_images,
-        MCE::Child->create(
-            \&load_image,
-            "$images_path/$file",
-            $F
-        )
-    );
+    MCE::Child->create(\&load_image, "$images_path/$file", $F);
     last unless($RUNNING);
 }
-foreach my $tt (@th_images) {
+while (MCE::Child->list_running()) {
+    foreach my $tt (MCE::Child->list_joinable()) {
+        my $image = $tt->join();
+        if (defined($image)) {
+            push(@IMAGES, $image);
+            $F->vsync();
+            $F->blit_write($image);
+            $F->vsync();
+            sleep .5;
+        }
+    }
+}
+foreach my $tt (MCE::Child->list_joinable()) {
     my $image = $tt->join();
     if (defined($image)) {
         push(@IMAGES, $image);
+        $F->vsync();
+        $F->blit_write($image);
+        $F->vsync();
+        sleep .5;
     }
 }
-
+$F->graphics_mode();
 $F->cls();
 
 ##################################
@@ -250,7 +259,7 @@ my @order = (
     'Blitting',
 #    'Blit Move',
     'Rotate',
-#    'Flipping',
+    'Flipping',
     'Monochrome',
 #    'XOR Mode Drawing',
 #    'OR Mode Drawing',
@@ -305,6 +314,7 @@ sub finish {
     foreach my $thr (MCE::Child->list()) {
         $thr->kill('KILL')->join();
     }
+    $F->text_mode();
     exec('reset');
 } ## end sub finish
 
@@ -313,13 +323,12 @@ sub load_image {
     my $F    = shift;
 
     local $SIG{'ALRM'} = undef;
-    local $SIG{'INT'}  = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'QUIT'} = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'KILL'} = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'TERM'} = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'HUP'}  = sub { $F->text_mode(); MCE::Child->exit(); };
+    local $SIG{'INT'}  = sub { MCE::Child->exit(); };
+    local $SIG{'QUIT'} = sub { MCE::Child->exit(); };
+    local $SIG{'KILL'} = sub { MCE::Child->exit(); };
+    local $SIG{'TERM'} = sub { MCE::Child->exit(); };
+    local $SIG{'HUP'}  = sub { MCE::Child->exit(); };
 
-    MCE::Child->yield(0.05);
     print_it($F,"Loading Image > $file", '00FFFFFF', undef, 1);
 
     my $image = $F->load_image(
@@ -333,12 +342,7 @@ sub load_image {
             'center'       => CENTER_XY,
         }
     );
-
-    unless ($nosplash) {
-        my $delay = time - $start;
-        sleep(2.0 - $delay) if ($delay < 2.0);
-    }
-
+    print_it($F,"Image loaded > $file", 'FFFF00FF', undef, 1);
     return($image);
 }
 
@@ -347,7 +351,7 @@ sub run_thread {
     my $dev    = shift;
     my $chnl   = shift;
 
-    my $F = Graphics::Framebuffer->new('FB_DEVICE' => "/dev/fb$dev", 'SHOW_ERRORS' => 0, 'ACCELERATED' => !$noaccel, 'SPLASH' => 0, 'RESET' => TRUE);
+    my $F = Graphics::Framebuffer->new('FB_DEVICE' => "/dev/fb$dev", 'SHOW_ERRORS' => 0, 'ACCELERATED' => !$noaccel, 'SPLASH' => 0, 'RESET' => FALSE);
 
     local $SIG{'ALRM'} = undef;
     local $SIG{'INT'}  = sub { $F->text_mode(); MCE::Child->exit(); };
@@ -438,7 +442,7 @@ sub plotting {
         my $y = int(rand($screen_height));
         $F->set_color({ 'alpha' => 255, 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->plot({ 'x' => $x, 'y' => $y, 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub plotting
 
@@ -450,7 +454,7 @@ sub lines {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->line({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xx' => int(rand($XX)), 'yy' => int(rand($YY)), 'antialiased' => $aa, 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub lines
 
@@ -465,7 +469,7 @@ sub angle_lines {
         $F->angle_line({ 'x' => $center_x, 'y' => $center_y, 'radius' => int($F->{'H_CLIP'} / 2), 'angle' => $angle, 'antialiased' => $aa, 'pixel_size' => $psize });
         $angle += 7;
         $angle -= 360 if ($angle >= 360);
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub angle_lines
 
@@ -476,7 +480,7 @@ sub boxes {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->box({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xx' => int(rand($XX)), 'yy' => int(rand($YY)), 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub boxes
 
@@ -488,7 +492,7 @@ sub filled_boxes {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->box({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xx' => int(rand($XX)), 'yy' => int(rand($YY)), 'filled' => 1 });
 
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
         $F->vsync();
     } ## end while (time < $s)
 } ## end sub filled_boxes
@@ -528,7 +532,7 @@ sub gradient_boxes {
                 }
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub gradient_boxes
 
@@ -557,7 +561,7 @@ sub hatch_filled_boxes {
                 'hatch'  => $HATCHES[int(rand(scalar(@HATCHES)))]
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
     $F->attribute_reset();
 } ## end sub hatch_filled_boxes
@@ -578,7 +582,7 @@ sub texture_filled_boxes {
                 'texture' => $image
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub texture_filled_boxes
 
@@ -589,7 +593,7 @@ sub rounded_boxes {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->box({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xx' => int(rand($XX)), 'yy' => int(rand($YY)), 'radius' => 4 + rand($XX / 16), 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub rounded_boxes
 
@@ -600,7 +604,7 @@ sub filled_rounded_boxes {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->box({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xx' => int(rand($XX)), 'yy' => int(rand($YY)), 'radius' => 4 + rand($XX / 16), 'filled' => 1 });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub filled_rounded_boxes
 
@@ -612,7 +616,7 @@ sub hatch_filled_rounded_boxes {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->set_b_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->box({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xx' => int(rand($XX)), 'yy' => int(rand($YY)), 'radius' => 4 + rand($XX / 16), 'filled' => 1, 'hatch' => $HATCHES[int(rand(scalar(@HATCHES)))] });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
     $F->attribute_reset();
 } ## end sub hatch_filled_rounded_boxes
@@ -654,7 +658,7 @@ sub gradient_rounded_boxes {
                 }
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub gradient_rounded_boxes
 
@@ -675,7 +679,7 @@ sub texture_filled_rounded_boxes {
                 'texture' => $image
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub texture_filled_rounded_boxes
 
@@ -686,7 +690,7 @@ sub circles {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->circle({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'radius' => rand($center_y), 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub circles
 
@@ -697,7 +701,7 @@ sub filled_circles {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->circle({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'radius' => rand($center_y), 'filled' => 1 });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub filled_circles
 
@@ -709,7 +713,7 @@ sub hatch_filled_circles {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->set_b_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->circle({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'radius' => rand($center_y), 'filled' => 1, 'hatch' => $HATCHES[int(rand(scalar(@HATCHES)))] });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
     $F->attribute_reset();
 } ## end sub hatch_filled_circles
@@ -743,7 +747,7 @@ sub gradient_circles {
                 }
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub gradient_circles
 
@@ -762,7 +766,7 @@ sub texture_filled_circles {
                 'texture' => $image
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub texture_filled_circles
 
@@ -773,7 +777,7 @@ sub arcs {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->arc({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'radius' => rand($center_y), 'start_degrees' => rand(360), 'end_degrees' => rand(360), 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub arcs
 
@@ -784,7 +788,7 @@ sub poly_arcs {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->poly_arc({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'radius' => rand($center_y), 'start_degrees' => rand(360), 'end_degrees' => rand(360), 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub poly_arcs
 
@@ -795,7 +799,7 @@ sub filled_pies {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->filled_pie({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'radius' => rand($center_y), 'start_degrees' => rand(360), 'end_degrees' => rand(360) });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub filled_pies
 
@@ -807,7 +811,7 @@ sub hatch_filled_pies {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->set_b_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->filled_pie({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'radius' => rand($center_y), 'start_degrees' => rand(360), 'end_degrees' => rand(360), 'hatch' => $HATCHES[int(rand(scalar(@HATCHES)))] });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
     $F->attribute_reset();
 } ## end sub hatch_filled_pies
@@ -842,7 +846,7 @@ sub gradient_pies {
                 }
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub gradient_pies
 
@@ -866,7 +870,7 @@ sub texture_filled_pies {
                 'texture'       => $image,
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub texture_filled_pies
 
@@ -877,7 +881,7 @@ sub ellipses {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->ellipse({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xradius' => rand($center_x), 'yradius' => rand($center_y), 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub ellipses
 
@@ -888,7 +892,7 @@ sub filled_ellipses {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)), 'alpha' => int(rand(256)) });
         $F->ellipse({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xradius' => rand($center_x), 'yradius' => rand($center_y), 'filled' => 1 });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub filled_ellipses
 
@@ -900,7 +904,7 @@ sub hatch_filled_ellipses {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->set_b_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->ellipse({ 'x' => int(rand($XX)), 'y' => int(rand($YY)), 'xradius' => rand($center_x), 'yradius' => rand($center_y), 'filled' => 1, 'hatch' => $HATCHES[int(rand(scalar(@HATCHES)))] });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
     $F->attribute_reset();
 } ## end sub hatch_filled_ellipses
@@ -934,7 +938,7 @@ sub gradient_ellipses {
                 }
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub gradient_ellipses
 
@@ -954,7 +958,7 @@ sub texture_filled_ellipses {
                 'texture' => $image
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub texture_filled_ellipses
 
@@ -977,7 +981,7 @@ sub polygons {
                 'pixel_size'  => $psize
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub polygons
 
@@ -999,7 +1003,7 @@ sub filled_polygons {
                 'filled'      => 1,
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub filled_polygons
 
@@ -1023,7 +1027,7 @@ sub hatch_filled_polygons {
                 'hatch'       => $HATCHES[int(rand(scalar(@HATCHES)))]
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
     $F->attribute_reset();
 } ## end sub hatch_filled_polygons
@@ -1058,7 +1062,7 @@ sub gradient_polygons {
                 }
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub gradient_polygons
 
@@ -1082,7 +1086,7 @@ sub texture_filled_polygons {
                 'texture'     => $image
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub texture_filled_polygons
 
@@ -1097,7 +1101,7 @@ sub beziers {
             push(@coords, int(rand($XX)), int(rand($YY)));
         }
         $F->bezier({ 'coordinates' => \@coords, 'points' => 100, 'pixel_size' => $psize });
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub beziers
 
@@ -1131,7 +1135,7 @@ sub truetype_fonts {
             $b->{'x'} = rand($F->{'XX_CLIP'} - $b->{'pwidth'});
             $F->ttf_print($b);
         }
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $g)
 } ## end sub truetype_fonts
 
@@ -1204,7 +1208,7 @@ sub rotate_truetype_fonts {
         }
         $angle++;
         $angle = 0 if ($angle >= 360);
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $g)
 } ## end sub rotate_truetype_fonts
 
@@ -1279,7 +1283,7 @@ sub color_replace {
                 }
             }
         );
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub color_replace
 
@@ -1304,7 +1308,7 @@ sub blitting {
         $image->{'x'} = abs(rand($XX - $image->{'width'}));
         $image->{'y'} = $F->{'Y_CLIP'} + abs(rand(($YY - $F->{'Y_CLIP'}) - $image->{'height'}));
         $F->blit_write($image);
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub blitting
 
@@ -1324,17 +1328,19 @@ sub blit_move {
             }
         }
     );
-    $F->blit_write({ %{$image}, 'x' => 10, 'y' => 10 });
-    my $x = 10;
-    my $y = 10;
+    my $x = 20;
+    my $y = 20;
+    $image->{'x'} = $x;
+    $image->{'y'} = $y;
+    $F->blit_write($image);
     my $w = $image->{'width'};
     my $h = $image->{'height'};
     my $s = time + $delay;
     while (time < $s) {
-        $F->blit_move({ 'x' => abs($x), 'y' => abs($y), 'width' => $w, 'height' => $h, 'x_dest' => abs($x) + 4, 'y_dest' => abs($y) + 2 });
-        $x += 4;
+        $image = $F->blit_move({ %{$image}, 'x_dest' => abs($x), 'y_dest' => abs($y) });
+        $x += 5;
         $y += 2;
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub blit_move
 
@@ -1388,7 +1394,7 @@ sub rotate {
             $angle += 3;
             $angle = 0 if ($angle >= 360);
             $count++;
-            MCE::Child->yield(0.0002);
+            MCE::Child->yield(0);
         } ## end while (time < $s || $count...)
 
         $angle = 0;
@@ -1425,7 +1431,7 @@ sub rotate {
             $angle = 0 if ($angle <= -360);
             $count++;
 
-            MCE::Child->yield(0.0002);
+            MCE::Child->yield(0);
         } ## end while (time < $s || $count...)
         last if ($F->{'BITS'} == 16);
     } ## end foreach my $p (0 .. 1)
@@ -1450,9 +1456,6 @@ sub flipping {
                         'blit_data' => $image
                     }
                 );
-                $rot->{'image'} = "$rot->{'image'}";
-                $rot->{'x'}     = abs(($XX - $rot->{'width'}) / 2);
-                $rot->{'y'}     = abs((($YY - $F->{'Y_CLIP'}) - $rot->{'height'}) / 2);
                 $F->blit_write($rot);
             } else {
                 $r                = rand(scalar(@IMAGES));
@@ -1463,7 +1466,7 @@ sub flipping {
 
             sleep .3;
         } ## end foreach my $dir (qw(normal horizontal vertical both))
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub flipping
 
@@ -1490,7 +1493,7 @@ sub monochrome {
         $mono->{'x'} = abs(rand($XX - $mono->{'width'}));
         $mono->{'y'} = $F->{'Y_CLIP'} + abs(rand(($YY - $F->{'Y_CLIP'}) - $mono->{'height'}));
         $F->blit_write($mono);
-        MCE::Child->yield(0.0002);
+        MCE::Child->yield(0);
     } ## end while (time < $s)
     sleep  $delay;
 } ## end sub monochrome
