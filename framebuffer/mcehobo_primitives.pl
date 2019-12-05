@@ -49,7 +49,6 @@ use Graphics::Framebuffer;
 use List::Util qw(min max shuffle);
 use Time::HiRes qw(sleep time alarm);
 use Getopt::Long;
-use Sys::CPU;
 
 # use Data::Dumper::Simple;$Data::Dumper::Sortkeys=1; $Data::Dumper::Purity=1; $Data::Dumper::Deepcopy=1;
 
@@ -58,7 +57,7 @@ my $psize    = 1;
 my $noaccel  = 0;
 my $nosplash = 0;
 my $delay    = 5;
-my $threads  = Sys::CPU::cpu_count();
+my $threads  = MCE::Util::get_ncpu();
 $threads    -= 1 if ($threads > 1);
 
 GetOptions(
