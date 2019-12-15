@@ -122,10 +122,10 @@ Framebuffer Console.
 ### References
 
 1. ** Richard Kelsch.
-   https://metacpan.org/pod/Graphics::Framebuffer v6.43
+   https://metacpan.org/pod/Graphics::Framebuffer v6.46
    examples/multiprocessing/threaded_primitives.pl
 
 2. ** Richard Kelsch.
-   https://metacpan.org/pod/Graphics::Framebuffer v6.43
+   https://metacpan.org/pod/Graphics::Framebuffer v6.46
    examples/multiprocessing/threaded_slideshow.pl
 

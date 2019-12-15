@@ -85,7 +85,7 @@ foreach my $dev (0 .. 31) {
     last if (scalar(@devs) >= $heads);
 }
 
-$SIG{'QUIT'} = $SIG{'INT'} = $SIG{'KILL'} = $SIG{'TERM'} = $SIG{'HUP'} = \&finish;
+$SIG{'HUP'} = $SIG{'INT'} = $SIG{'TERM'} = \&finish;
 
 my $p = gather(@paths);
 
@@ -122,7 +122,7 @@ for (my $t = 0; $t < $threads; $t++) {
 }
 
 while ($RUNNING) {    # Monitors the running threads and restores them if one dies
-    my $num = MCE::Hobo->list_running;
+    my $num = MCE::Hobo->list_running();
     if ($RUNNING && $num < $threads) {
         for (my $t = 0; $t < $threads; $t++) {
             if ($RUNNING) {
@@ -132,28 +132,25 @@ while ($RUNNING) {    # Monitors the running threads and restores them if one di
                 }
             }
         }
-    } else {
-        sleep 1;
+    } elsif ($RUNNING) {
+        sleep .1;
     }
 }
 
+MCE::Hobo->wait_all();
+
+# Important, must stop the shared-manager process before exec
+MCE::Shared->stop();
+exec('reset');
+ 
 exit(0);
 
 sub finish {
     $RUNNING = 0;
-    alarm 0;
-    $SIG{'ALRM'} = sub {
-        exec('reset');
-    };
-    alarm 20;
-    print "\n\nSHUTTING DOWN...\n\n";
-    # Just brute for kill the threads for speed.  No need to be as elegant as before
+    print STDERR "\n\n\rSHUTTING DOWN THREADS...\n\n";
     foreach my $thr (MCE::Hobo->list()) {
-        $thr->kill('KILL')->join();
+        $thr->kill('QUIT')->join();
     }
-    # Important, must also stop the shared-manager process before exec
-    MCE::Shared->stop();
-    exec('reset');
 } ## end sub finish
 
 sub gather {
@@ -391,8 +388,6 @@ sub show {
     my $show_name = shift || 0;
     my ($nx, $ny) = @_;
 
-    local $SIG{'ALRM'} = undef;
-
     my $FB = (defined($nx)) ?
       Graphics::Framebuffer->new(
           'SHOW_ERRORS' => $errors,
@@ -411,11 +406,8 @@ sub show {
           'FB_DEVICE'   => $dev,
           'SPLASH'      => $display,
       );
-    local $SIG{'INT'}  = sub { $FB->text_mode(); print "Thread exiting...\n"; MCE::Hobo->exit(); };
-    local $SIG{'QUIT'} = sub { $FB->text_mode(); print "Thread exiting...\n"; MCE::Hobo->exit(); };
-    local $SIG{'KILL'} = sub { $FB->text_mode(); print "Thread exiting...\n"; MCE::Hobo->exit(); };
-    local $SIG{'TERM'} = sub { $FB->text_mode(); print "Thread exiting...\n"; MCE::Hobo->exit(); };
-    local $SIG{'HUP'}  = sub { $FB->text_mode(); print "Thread exiting...\n"; MCE::Hobo->exit(); };
+    local $SIG{'HUP'} = local $SIG{'INT'} = local $SIG{'TERM'} = undef;
+    # QUIT signal in MCE::Hobo is set to exit automatically
 
     $FB->wait_for_console(1);
     $FB->acceleration(! $noaccel);
@@ -451,11 +443,10 @@ sub show {
         my $tdelay = 0;
         if (ref($image) ne 'ARRAY') {
             $tdelay = $delay - $image->{'benchmark'}->{'total'};
-#            next if (exists($image->{'tags'}->{'jpeg_color_space'}) && $image->{'tags'}->{'jpeg_color_space'} <= 1);
         }
         $tdelay = 0 if ($tdelay < 0);
-        if (defined($image)) {
-            if ($display) {
+        if (defined($image) && $RUNNING) {
+            if ($display && $RUNNING) {
                 $display = FALSE;
                 $FB->cls('OFF');
                 $GO = TRUE;
@@ -469,9 +460,9 @@ sub show {
                 }
             }
             $FB->rbox({ 'x' => $X, 'y' => $Y, 'width' => $W, 'height' => $H, 'filled' => 1 });
-            $FB->wait_for_console(); # Results will vary
+            $FB->wait_for_console() if ($RUNNING); # Results will vary
             print_it($FB, $X, $Y, basename($name)) if ($show_name);
-            if (ref($image) eq 'ARRAY') {
+            if (ref($image) eq 'ARRAY' && $RUNNING) {
                 my $s = time + ($delay * 2);
                 while ($RUNNING && time <= $s) {    # We play it as many times as the delay allows, but at least once.
                     # We don't use "play_animation" for threads.  This is so we can stop the playback quickly.
@@ -483,11 +474,11 @@ sub show {
                         # show an accurate animation.
                         MCE::Hobo->yield(0); # Yielding takes time, and the delay calculation should be after.
                         my $d = (($image->[$frame]->{'tags'}->{'gif_delay'} * .01) - (time - $begin));
-                        sleep $d if ($d > 0);
+                        sleep $d if ($d > 0 && $RUNNING);
                         last unless ($RUNNING);
                     } ## end for (my $frame = 0; $frame...)
                 } ## end while ($RUNNING && time <=...)
-            } else {
+            } elsif ($RUNNING) {
                 if ($image->{'width'} < $W) {
                     my $x = ($W - $image->{'width'}) / 2;
                     $image->{'x'} += $x;

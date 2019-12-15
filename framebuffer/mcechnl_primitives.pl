@@ -55,7 +55,6 @@ my $images_path;
     }
 }
 
-my $start = time;
 my $splash = ($nosplash) ? 0 : 2;
 print "\n\nGathering images...\n";
 $|=1;
@@ -67,9 +66,9 @@ closedir($DIR);
 our $RUNNING = TRUE;
 our @IMAGES;
 
-my $F = Graphics::Framebuffer->new('FB_DEVICE' => "/dev/fb$dev", 'SHOW_ERRORS' => 0, 'ACCELERATED' => !$noaccel, 'SPLASH' => 0, 'RESET' => TRUE);
+my $F = Graphics::Framebuffer->new('FB_DEVICE' => "/dev/fb$dev", 'SHOW_ERRORS' => 0, 'ACCELERATED' => !$noaccel, 'SPLASH' => 0, 'RESET' => FALSE);
 
-$SIG{'HUP'} = $SIG{'QUIT'} = $SIG{'INT'} = $SIG{'KILL'} = $SIG{'TERM'} = \&finish;
+$SIG{'HUP'} = $SIG{'INT'} = $SIG{'TERM'} = \&finish;
 
 my $sinfo = $F->screen_dimensions();
 $F->cls('OFF');
@@ -102,31 +101,30 @@ $F->splash($Graphics::Framebuffer::VERSION) unless ($nosplash);
 
 my $DORKSMILE;
 
+# Load each image in a thread.  Throttle the number of threads according to the $threads value
 foreach my $file (@files) {
     next if ($file =~ /^\.+/ || $file =~ /Test|gif/i || -d "$images_path/$file");
     MCE::Child->create(\&load_image, "$images_path/$file", $F);
+    # Throttle
+    while (MCE::Child->list() >= $threads) {
+        foreach my $thd (MCE::Child->list_joinable()) {
+            my $image = $thd->join();
+            push(@IMAGES, $image) if (defined($image) && $RUNNING);
+            last unless($RUNNING);
+        }
+        last unless($RUNNING);
+        sleep .01;
+    }
     last unless($RUNNING);
 }
-while (MCE::Child->list_running()) {
-    foreach my $tt (MCE::Child->list_joinable()) {
-        my $image = $tt->join();
-        if (defined($image)) {
-            push(@IMAGES, $image);
-            $F->vsync();
-            $F->blit_write($image);
-            $F->vsync();
-            sleep .5;
-        }
-    }
-}
-foreach my $tt (MCE::Child->list_joinable()) {
+# Join any remaining threads not joined by the throttle above
+foreach my $tt (MCE::Child->list()) {
     my $image = $tt->join();
-    if (defined($image)) {
+    if (defined($image) && $RUNNING) {
         push(@IMAGES, $image);
         $F->vsync();
         $F->blit_write($image);
         $F->vsync();
-        sleep .5;
     }
 }
 $F->graphics_mode();
@@ -279,54 +277,41 @@ if ($RUNNING) {
     foreach my $thr (0 .. $threads) {
         $th[$thr] = MCE::Child->create(\&run_thread,$thr,$dev,$chnl);
     }
-    # Await worker notification before inserting (blocking).
-    while ( scalar(@order) && $chnl->recv2() ) {
+    while ( scalar(@order) ) {
         $chnl->enqueue( shift @order );
     }
     $chnl->end();
-    foreach my $t (@th) {
-        $t->join();
-    }
+    MCE::Child->wait_all();
 }
 
 ##################################
 
 $F->clip_reset();
 $F->attribute_reset();
+$F->text_mode();
 $F->cls('ON');
 
+exec('reset');
 
 exit(0);
 
 sub finish {
-    alarm 0;
     $RUNNING = FALSE;
-    {
-        @order = ();
-    }
-    $SIG{'ALRM'} = sub {
-        exec('reset');
-    };
-    alarm 20;
-    print "\n\nSHUTTING DOWN...\n\n";
-    # Just brute for kill the threads for speed.  No need to be as elegant as before
+    @order = ();
+    print STDERR "\n\n\rSHUTTING DOWN...\n\n";
     foreach my $thr (MCE::Child->list()) {
-        $thr->kill('KILL')->join();
+        $thr->kill('QUIT')->join();
     }
-    $F->text_mode();
-    exec('reset');
 } ## end sub finish
 
 sub load_image {
     my $file = shift;
     my $F    = shift;
 
-    local $SIG{'ALRM'} = undef;
-    local $SIG{'INT'}  = sub { MCE::Child->exit(); };
-    local $SIG{'QUIT'} = sub { MCE::Child->exit(); };
-    local $SIG{'KILL'} = sub { MCE::Child->exit(); };
-    local $SIG{'TERM'} = sub { MCE::Child->exit(); };
-    local $SIG{'HUP'}  = sub { MCE::Child->exit(); };
+    return unless ($RUNNING);
+
+    local $SIG{'HUP'} = local $SIG{'INT'} = local $SIG{'TERM'} = undef;
+    # QUIT signal in MCE::Child is set to exit automatically
 
     print_it($F,"Loading Image > $file", '00FFFFFF', undef, 1);
 
@@ -350,26 +335,15 @@ sub run_thread {
     my $dev    = shift;
     my $chnl   = shift;
 
+    return unless ($RUNNING);
+
     my $F = Graphics::Framebuffer->new('FB_DEVICE' => "/dev/fb$dev", 'SHOW_ERRORS' => 0, 'ACCELERATED' => !$noaccel, 'SPLASH' => 0, 'RESET' => FALSE);
 
-    local $SIG{'ALRM'} = undef;
-    local $SIG{'INT'}  = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'QUIT'} = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'KILL'} = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'TERM'} = sub { $F->text_mode(); MCE::Child->exit(); };
-    local $SIG{'HUP'}  = sub { $F->text_mode(); MCE::Child->exit(); };
+    local $SIG{'HUP'} = local $SIG{'INT'} = local $SIG{'TERM'} = undef;
+    # QUIT signal in MCE::Child is set to exit automatically
 
-    while () {
+    while (defined( my $name = $chnl->dequeue() )) {
         $|=1;
-
-        # Notify the manager process to send item. This allows the
-        # manager process to enqueue only when requested. The benefit
-        # is being able to end the channel immediately. In other words,
-        # this eliminates having a shared $RUNNING variable.
-
-        $chnl->send2($$); # channel is bi-directional
-        last unless defined( my $name = $chnl->dequeue() );
-
         $func{$name}->($F);
     }
 }
@@ -466,7 +440,7 @@ sub angle_lines {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->angle_line({ 'x' => $center_x, 'y' => $center_y, 'radius' => int($F->{'H_CLIP'} / 2), 'angle' => $angle, 'antialiased' => $aa, 'pixel_size' => $psize });
-        $angle += 7;
+        $angle ++;
         $angle -= 360 if ($angle >= 360);
         MCE::Child->yield(0);
     } ## end while (time < $s)
@@ -626,8 +600,6 @@ sub gradient_rounded_boxes {
 
     my $s = time + $delay;
     while (time < $s) {
-
-        #        $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         my $x  = int(rand($XX));
         my $xx = int(rand($XX));
         my $y  = int(rand($YY));
@@ -968,7 +940,7 @@ sub polygons {
     my $s = time + $delay;
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
-        my $points = 3;
+        my $points = 4;
         my $coords = [];
         foreach my $p (1 .. $points) {
             push(@{$coords}, int(rand($XX)), int(rand($YY)));
@@ -991,7 +963,7 @@ sub filled_polygons {
     my $s = time + $delay;
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
-        my $points = 3;
+        my $points = 4;
         my $coords = [];
         foreach my $p (1 .. $points) {
             push(@{$coords}, int(rand($XX)), int(rand($YY)));
@@ -1014,7 +986,7 @@ sub hatch_filled_polygons {
     while (time < $s) {
         $F->set_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
         $F->set_b_color({ 'red' => int(rand(256)), 'green' => int(rand(256)), 'blue' => int(rand(256)) });
-        my $points = 3;
+        my $points = 4;
         my $coords = [];
         foreach my $p (1 .. $points) {
             push(@{$coords}, int(rand($XX)), int(rand($YY)));
@@ -1337,8 +1309,8 @@ sub blit_move {
     my $s = time + $delay;
     while (time < $s) {
         $image = $F->blit_move({ %{$image}, 'x_dest' => abs($x), 'y_dest' => abs($y) });
-        $x += 5;
-        $y += 2;
+        $x++;
+        $y++;
         MCE::Child->yield(0);
     } ## end while (time < $s)
 } ## end sub blit_move
@@ -1367,7 +1339,7 @@ sub rotate {
         } else {
             $st .= 'Using High Quality Setting';
         }
-        # print_it($F, $st);
+
         my $s     = time + $delay;
         my $count = 0;
 
@@ -1403,7 +1375,7 @@ sub rotate {
         } else {
             $st .= 'Using High Quality Setting';
         }
-        # print_it($F, $st);
+
         $s     = time + $delay;
         $count = 0;
         while (time < $s || $count < 6) {
@@ -1493,7 +1465,7 @@ sub monochrome {
         $mono->{'y'} = $F->{'Y_CLIP'} + abs(rand(($YY - $F->{'Y_CLIP'}) - $mono->{'height'}));
         $F->blit_write($mono);
         MCE::Child->yield(0);
-    } ## end while (time < $s)
+    }
     sleep  $delay;
 } ## end sub monochrome
 
