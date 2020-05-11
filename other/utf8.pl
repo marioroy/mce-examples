@@ -1,77 +1,54 @@
 #!/usr/bin/env perl
 ###############################################################################
-## ----------------------------------------------------------------------------
-## UTF-8 example.
-##
+# -----------------------------------------------------------------------------
+# UTF-8 demonstration.
+#
 ###############################################################################
 
 use strict;
 use warnings;
 
-use MCE::Loop chunk_size => 'auto', max_workers => 'auto';
-
 use utf8;
-use open qw(:utf8 :std);
+use MCE::Loop 1.868;
 
-###############################################################################
-## ----------------------------------------------------------------------------
-## UTF-8 example. This is based on a sample code sent to me by Marcus Smith.
-##
-###############################################################################
+binmode \*STDOUT, ':utf8';
 
-## Iterate over @list and output to STDOUT three times:
-## - Once from a normal for-loop,
-## - Once after fetching results from MCE->do
-## - Once after fetching results from MCE->gather
+# This is based on sample code sent to me by Marcus Smith.
+#
+# Iterate over @list and output to STDOUT 4 times:
+# - from a normal for-loop,
+# - MCE->say,
+# - MCE->do, and
+# - MCE->gather
 
-## Some Unicode characters from Basic Latin, Latin-1, and beyond.
-## my @list = (qw(U Ö Å Ǣ Ȝ), "\N{INTERROBANG}");
+# Unicode characters.
+my @list = ( qw(U Ö Å Ǣ Ȝ), "さあ、私は祈る" );
 
-my @list = qw(U Ö Å Ǣ Ȝ);
+print "0: for-loop: $_\n" for @list;
 
-print "0: for-loop: $_\n" for (@list);
-print "\n";
-
-MCE::Loop::init { gather => sub { print shift() } };
+MCE::Loop->init(
+   max_workers => 3,
+   chunk_size  => 'auto',
+   gather      => sub { print shift; }
+);
 
 sub callback {
    my ($msg) = @_;
    print $msg;
-   return;
 }
 
 mce_loop {
    my $wid = MCE->wid;
 
-   for (@{ $_ }) {
-      MCE->do("callback", "$wid: MCE->do: $_\n");
-   }
-
+   MCE->say("$wid: MCE->say: $_") for @{ $_ };
    MCE->sync;
 
-   for (@{ $_ }) {
-      MCE->gather("$wid: MCE->gather: $_\n");
-   }
+   MCE->do("callback", "$wid: MCE->do: $_\n") for @{ $_ };
+   MCE->sync;
+
+   MCE->gather("$wid: MCE->gather: $_\n") for @{ $_ };
 
 } @list;
-
-print "\n";
-
-###############################################################################
-## ----------------------------------------------------------------------------
-## Process a scalar like a file. Setting chunk_size to 1 for the demonstration.
-##
-###############################################################################
-
-my $unicode = join("\n", @list) . "\n";
-
-MCE::Loop::init { chunk_size => 1 };
-
-mce_loop_f {
-   my $wid = MCE->wid;
-   MCE->print("$wid: MCE->print: $_");
-
-} \$unicode;
 
 print "\n";
 
