@@ -1,0 +1,24 @@
+
+2022 Updates
+
+  * Replaced http with https in READMEs and source files.
+
+  * Added chameneos/rodrigo.pl demonstration, using Thread::Semaphore.
+    Updated chameneos/channel1.pl and channel2.pl examples to use
+    MCE::Channel (SimpleFast) implementation. They perform similarly
+    to rodrigo.pl.
+
+  * Verified the matmult folder against recent PDL releases 2.077 and above.
+    Moved strassen_49_f.pl and strassen_49_t.pl to the archive folder.
+    Updated the examples to use PDL::LinearAlgebra::Real, if requested.
+
+  * Updated other/{ files_flow.pl, files_mce.pl, and files_thr.pl }.
+    These now process dot files and treat symbolic dirs as files.
+
+  * Updated tbray/wf_mmap.pl to not use Sys::Mmap (failing for big files).
+    Added {*.log, o10k.ap, and o1000k.ap} to the git ignore list.
+
+2012-2021 Additions
+
+  * Various MCE demonstrations written over time.
+

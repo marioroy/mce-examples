@@ -1,0 +1,27 @@
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must ends with two \r.
+Icon
+
+# Thumbnails
+._*
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+.Inline
+_Inline
+*.bak
+*.old
+*.swp
+*.tmp
+
+tbray/*.log
+tbray/o10k.ap
+tbray/o1000k.ap
+tbray/o*
+

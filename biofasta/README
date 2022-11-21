@@ -1,0 +1,77 @@
+
+## Parallel demonstration for Bioinformatics
+
+   After releasing MCE v1.522 on Christmas day, I saw BioUtil v2014.1226
+   released one day later. Several folks have asked for parallel examples.
+   At the time, BioUtil processed by lines. I thought (not knowing what
+   I was getting into) why not process by records instead via $/ = "\n>".
+
+   The installation of Inline::C is optional unless running with FAIDXC=1.
+
+      apt-get install \   (Debian/Ubuntu)
+         gcc perl-modules libinline-perl libparse-recdescent-perl
+
+      pkg install \       (FreeBSD/PC-BSD/TrueOS)
+         gcc p5-ExtUtils-MakeMaker p5-Inline p5-Parse-RecDescent
+
+      yum install \       (Red Hat/CentOS/Fedora)
+         gcc perl-ExtUtils-MakeMaker perl-Inline perl-Parse-RecDescent
+
+      FAIDXC=1 perl fasta_aidx.pl < include/sample.fasta
+
+   -- Directory contents
+
+   README              This readme file
+   fasta_aidx.pl       FASTA Indexer : Parallel FASTA index generation
+   fasta_rdr1.pl       FASTA Reader  : Serial iterator mode, many consumers
+   fasta_rdr2.pl       FASTA Reader  : Parallel iterator mode
+   fasta_rdr3.pl       FASTA Reader  : Parallel callback mode
+
+   include/
+      Fasta.pm         Perl module containing Faidx and Reader
+      FastaC.pm        Perl module containing Faidx calling C code
+      fasta_aidx.txt   Results from a dual E5-2660 (v1) 2.2 GHz machine
+      fasta_rdr.txt    Results from a Haswell Core i7 2.6 GHz laptop
+      fasta_seqlen.c   C code for better performance
+      sample.fasta     Sample FASTA file
+
+## Synopsis
+
+   The examples were created to demonstrate parallelism in MCE;
+   fasta_aidx.pl is not an official indexer by any means.
+
+   -- FASTA Indexer
+
+   fasta_aidx.pl [ /path/to/fastafile.fa ]
+   fasta_aidx.pl < include/sample.fasta     ## output sent to STDOUT
+
+   NPROCS=4 CKSIZE=4m  perl fasta_aidx.pl uniref.fa           ## 100% Perl
+   NPROCS=4 CKSIZE=64m perl fasta_aidx.pl hg19.fa
+
+   NPROCS=4 CKSIZE=4m  FAIDXC=1 perl fasta_aidx.pl uniref.fa  ## Inline C
+   NPROCS=4 CKSIZE=64m FAIDXC=1 perl fasta_aidx.pl hg19.fa
+
+   -- FASTA Reader
+
+   fasta_rdr3.pl [ /path/to/fastafile.fa [ trim_seq ] ]
+   fasta_rdr3.pl < include/sample.fasta     ## output sent to STDOUT
+
+   NPROCS=4 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 0 | wc -l
+   NPROCS=4 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 1 | wc -l
+
+## History
+
+   -- Four folks have inspired me along the way
+
+   Demian Riccardi  Mentioned on making an annoucement to BioPerl.
+                    I had nothing to offer as far as examples until now.
+
+   Hisham ElDai     Made a suggestion on downloading hg19.fa. This release
+                    consumes lesser memory for processing input data.
+
+   Jillian Rowe     Mentioned Scientist using MCE every day. This inspired
+                    me to not give up, especially with this release.
+
+   Wei Shen         Author of BioUtil. The FastaReader function inspired
+                    me to write parallel examples.
+

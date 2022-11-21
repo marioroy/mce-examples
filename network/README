@@ -1,0 +1,42 @@
+
+Various MCE demonstrations.
+
+# Net::Pcap
+
+  samples/             - from Net::Pcap module, t/samples/
+
+  net_pcap_dispatch.pl - producer-consumer Net::Pcap::dispatch
+  net_pcap_chunk.pl    - producer-consumer Net::Pcap::dispatch
+  net_pcap_next.pl     - producer-consumer Net::Pcap::next
+
+# Ping
+
+  Parallel ping demonstration using MCE::Hobo and MCE::Shared.
+  Based on pping.pl example included in Forks::Queue 0.03.
+
+  inc/                 - directory containing Delay.pm module
+                         for use with MCE::Shared
+
+  ping_tcp.pl (1)      - Net::Ping (tcp)
+                         32 workers, dequeues 4 at a time
+
+  ping_syn.pl (2)      - Net::Ping (syn)
+                         4 workers, dequeues 32 at a time
+
+  ping_ae.pl           - AnyEvent::FastPing
+                         4 workers, dequeues 32 at a time
+
+  (1) Calls the system ping binary in the absence of Net::Ping.
+
+  (2) AnyEvent::FastPing may be more reliable than Net::Ping (syn).
+      For Net:Ping (syn), allow time before running again to the
+      same subnet address.
+
+  Results (time to run, for 3 out of 254 queried addresses):
+
+      ping_tcp.pl 16.1 seconds 
+      ping_syn.pl  4.7 seconds
+      ping_ae.pl   4.7 seconds
+
+# Regards, Mario
+

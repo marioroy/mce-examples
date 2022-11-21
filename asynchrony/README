@@ -1,0 +1,88 @@
+###############################################################################
+##
+## Parallel Concurrency, Asynchrony, and Shared Data (threads or processes).
+##
+## This folder came about from wanting to show-case parallelism for various
+## concurrency modules with MCE. I search the web for echo servers and came
+## across a site by Frew Schmidt.
+##
+## https://blog.afoolishmanifesto.com/posts/concurrency-and-async-in-perl/
+##
+## That inspired me to give AnyEvent, IO::Async::Loop, Mojo::IOLoop, and POE
+## a try. The examples were updated so to have consistent output between
+## them; e.g. both dnslookup_ae.pl and dnslookup_ioa.pl acquire IPv4 and
+## IPv6 addresses.
+##
+## One may add (use threads) above MCE::Flow if threads is desired on any
+## Unix-based OS. EV does not work with ithreads. Thus, dnslookup_ae.pl
+## and echo_server_mojo.pl cannot run with threads.
+##
+###############################################################################
+
+# Both scripts output IPv4 and IPv6 addresses.
+
+$ perl dnslookup_ae.pl         ; AnyEvent
+$ perl dnslookup_ioa.pl        ; IO::Async::Loop
+
+bless({
+  "www.facebook.com" => ["31.13.71.36", "2a03:2880:f000:1e:face:b00c:0:25de"],
+  "www.google.com"   => [
+                          "63.88.73.119",
+                          "63.88.73.121",
+                          "63.88.73.118",
+                          "63.88.73.120",
+                          "63.88.73.117",
+                          "63.88.73.122",
+                          "63.88.73.116",
+                          "63.88.73.123",
+                          "2607:f8b0:4004:80d::2004",
+                        ],
+  "www.iana.org"     => ["192.0.32.8", "2620:0:2d0:200::8"],
+}, "MCE::Shared::Hash")
+
+###############################################################################
+
+# Each worker handles many connections simultaneously. The shared id value
+# is incremented each time a connection is made.
+
+- Terminal 1
+
+$ perl echo_server_ae.pl       ; AnyEvent
+$ perl echo_server_ioa.pl      ; IO::Async::Loop
+$ perl echo_server_mojo.pl     ; Mojo::IOLoop
+$ perl echo_server_poe.pl      ; POE
+
+[36137:0] listening on 0.0.0.0:9504
+[36134:0] listening on 0.0.0.0:9501
+[36136:0] listening on 0.0.0.0:9503
+[36135:0] listening on 0.0.0.0:9502
+[36138:0] listening on 0.0.0.0:9505
+[36139:0] listening on 0.0.0.0:9506
+[36140:0] listening on 0.0.0.0:9507
+[36141:0] listening on 0.0.0.0:9508
+[36134:1] client disconnected
+[36136:2] client disconnected
+
+- Terminal 2
+
+$ nc localhost 9501
+foo
+foo
+[36134:1] ping!
+[36134:1] ping!
+bar
+bar
+[36134:1] ping!
+^C
+
+- Terminal 3
+
+$ nc localhost 9503
+[36136:2] ping!
+[36136:2] ping!
+baz
+baz
+[36136:2] ping!
+[36136:2] ping!
+^C
+

@@ -1,0 +1,46 @@
+
+## This file provides the time taken to read a FASTA file in parallel.
+
+   The system is a Core i7 Quad-Core (Haswell) at 2.6 GHz running OS X v10.9.5.
+   Testing occured from a RAMdisk volume to factor out disk IO.
+
+   fasta_rdr1.pl: serial iterator, parallel consumers
+   fasta_rdr2.pl: parallel iterator mode
+   fasta_rdr3.pl: parallel callback mode
+
+## Synopsis
+
+   fasta_rdr [ /path/to/fastafile.fa [ trim_seq ] ]
+
+   NPROCS=4 perl fasta_rdr hg19.fa   0   run with 4 workers, no trimming
+   NPROCS=8 perl fasta_rdr uniref.fa 1   run with 8 workers, trim white space
+
+## Results for 2 million sequences extracted from UniRef100.fasta.gz.
+
+   $ gunzip -c uniref100.fasta.gz | head -15687827 > uniref.fa
+   1.0 GiB, 15.7 million lines
+
+   -- extract id, description, and sequence (no trimming)
+
+   NPROCS=4 perl fasta_rdr1.pl uniref.fa 0           | wc -l    29.041s
+
+   NPROCS=1 CKSIZE=4m perl fasta_rdr2.pl uniref.fa 0 | wc -l     6.976s
+   NPROCS=2 CKSIZE=4m perl fasta_rdr2.pl uniref.fa 0 | wc -l     3.506s
+   NPROCS=4 CKSIZE=4m perl fasta_rdr2.pl uniref.fa 0 | wc -l     2.100s
+
+   NPROCS=1 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 0 | wc -l     3.341s
+   NPROCS=2 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 0 | wc -l     1.637s
+   NPROCS=4 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 0 | wc -l     0.993s
+
+   -- trim white space
+
+   NPROCS=4 perl fasta_rdr1.pl uniref.fa 1           | wc -l    31.748s
+
+   NPROCS=1 CKSIZE=4m perl fasta_rdr2.pl uniref.fa 1 | wc -l     8.947s
+   NPROCS=2 CKSIZE=4m perl fasta_rdr2.pl uniref.fa 1 | wc -l     4.564s
+   NPROCS=4 CKSIZE=4m perl fasta_rdr2.pl uniref.fa 1 | wc -l     2.682s
+
+   NPROCS=1 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 1 | wc -l     5.472s
+   NPROCS=2 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 1 | wc -l     2.735s
+   NPROCS=4 CKSIZE=4m perl fasta_rdr3.pl uniref.fa 1 | wc -l     1.577s
+

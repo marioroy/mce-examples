@@ -1,0 +1,78 @@
+
+## This file provides the time taken to index three FASTA files.
+
+() The system is configured with two Intel Xeon E5-2660 (v1) 2.2 GHz;
+   128 GB 1600 MHz ECC memory; TurboBoost enabled; running CentOS 7.
+
+   Testing occured from /dev/shm. The unix real time is recorded;
+   e.g. time perl fasta_aidx.pl ...
+
+##########################################################################
+## Results for 93 sequences from hg19.fa; 3.0 GiB, 62.7 million lines.
+##########################################################################
+
+() hg19.fa                   pyfaidx     0m52.626s   (Python)
+                             samtools    0m20.077s   (C)
+                             fastahack   0m 3.897s   (C++)
+
+   CKSIZE=64m    Perl MCE                w/InlineC
+   fasta_aidx.pl 0m34.575s   NPROCS=1    0m 9.126s   3.0 GHz
+                 0m20.169s   NPROCS=2    0m 5.500s   3.0 GHz
+                 0m11.706s   NPROCS=4    0m 3.594s   3.0 GHz
+                 0m 8.646s   NPROCS=8    0m 3.458s   2.9 GHz
+                 0m 6.379s   NPROCS=12   0m 3.510s   2.8 GHz
+                 0m 5.550s   NPROCS=16   0m 3.540s   2.7 GHz
+                 0m 5.988s   NPROCS=20   0m 3.624s   2.7 GHz
+
+   Several records within hg19.fa are quite large; up to ~ 250 MiB.
+
+##########################################################################
+## Results for 2 million sequences extracted from UniRef100;
+## $ gunzip -c uniref100.fasta.gz | head -15687827 > uniref.2mil.fa
+## 1.0 GiB, 15.7 million lines.
+##########################################################################
+
+() uniref.2mil.fa            pyfaidx     0m20.520s   (Python)
+                             fastahack   0m14.112s   (C++)
+                             samtools    0m 8.332s   (C)
+
+   CKSIZE=4m     Perl MCE                w/InlineC
+   fasta_aidx.pl 0m19.165s   NPROCS=1    0m12.376s   3.0 GHz
+                 0m 9.595s   NPROCS=2    0m 6.211s   3.0 GHz
+                 0m 5.009s   NPROCS=4    0m 3.193s   3.0 GHz
+                 0m 2.700s   NPROCS=8    0m 1.785s   2.9 GHz
+                 0m 1.959s   NPROCS=12   0m 1.349s   2.8 GHz
+                 0m 1.570s   NPROCS=16   0m 1.089s   2.7 GHz
+                 0m 1.558s   NPROCS=20   0m 1.068s   2.7 GHz
+                 0m 1.433s   NPROCS=24   0m 1.038s   2.7 GHz
+                 0m 1.354s   NPROCS=28   0m 0.949s   2.7 GHz
+                 0m 1.267s   NPROCS=32   0m 0.916s   2.7 GHz
+
+   The dual E5-2660 (v1) combined have 32 logical cores, of which 16
+   are real cores and 16 hyper-threads; TurboBoost enabled.
+
+##########################################################################
+## Results for 10 million sequences extracted from UniRef100;
+## $ gunzip -c uniref100.fasta.gz | head -78658664 > uniref.10mil.fa
+## 4.7 GiB; 78.7 million lines.
+##########################################################################
+
+() uniref.10mil.fa           pyfaidx     1m39.297s   (Python)
+                             fastahack   0m58.831s   (C++)
+                             samtools    0m42.117s   (C)
+
+   CKSIZE=4m     Perl MCE                w/InlineC
+   fasta_aidx.pl 1m36.285s   NPROCS=1    1m 0.879s   3.0 GHz
+                 0m48.307s   NPROCS=2    0m30.265s   3.0 GHz
+                 0m25.091s   NPROCS=4    0m15.913s   3.0 GHz
+                 0m13.354s   NPROCS=8    0m 8.428s   2.9 GHz
+                 0m 9.261s   NPROCS=12   0m 6.034s   2.8 GHz
+                 0m 7.227s   NPROCS=16   0m 4.852s   2.7 GHz
+                 0m 7.075s   NPROCS=20   0m 4.727s   2.7 GHz
+                 0m 6.545s   NPROCS=24   0m 4.390s   2.7 GHz
+                 0m 6.108s   NPROCS=28   0m 4.138s   2.7 GHz
+                 0m 5.636s   NPROCS=32   0m 3.884s   2.7 GHz
+
+   The dual E5-2660 (v1) combined have 32 logical cores, of which 16
+   are real cores and 16 hyper-threads; TurboBoost enabled.
+

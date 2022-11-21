@@ -1,0 +1,123 @@
+=head1 NAME
+
+MCE::Inbox - Channel-like messaging supporting threads and processes
+
+=head1 VERSION
+
+This document describes MCE::Inbox version 0.002
+
+=head1 SYNOPSIS
+
+ use MCE::Inbox;
+
+ my $inbox = MCE::Inbox->new(qw/foo bar baz/);
+
+ $inbox->send('foo', qw/arg1 arg2 argN/);
+ $inbox->send([ 'bar', 'baz' ], 'hello');
+
+ my @args = $inbox->recv('foo');
+ my $msg1 = $inbox->recv('bar');
+ my $msg2 = $inbox->recv('baz');
+
+=head1 DESCRIPTION
+
+A MCE::Inbox object is a container for sending and receiving messages using
+L<MCE::Shared::Queue>. Serialization is provided by L<Sereal> if available.
+Defaults to L<Storable> otherwise. Both ends of the C<inbox> for the given ID
+can be read and written by as many workers as you want concurrently.
+
+=over 3
+
+=item new ( @ids )
+
+This constructs a queue object for each ID in the list. It is not possible
+to add or remove an ID afterwards.
+
+ @names = qw(foo bar baz);
+
+ $inbox = MCE::Inbox->new(@names);
+
+=item limit ( $id, $size )
+
+=item limit ( \@list, $size )
+
+Set the maximum number of messages pending for the given ID or list of IDs.
+This will cause send to block when the limit is reached until another worker
+receives again. Call limit optionally after constructing the inbox, before
+spawning threads and/or processes.
+
+ $inbox->limit('foo', 100);
+ $inbox->limit([ 'bar', 'baz' ], 200);
+
+=item recv ( $id )
+
+=item recv_nb ( $id )
+
+Blocking and non-blocking fetch methods. For the latter and when the queue
+associated with the ID is empty, returns C<an empty list> in list context
+or C<undef> in scalar context.
+
+ @args = $inbox->recv('foo');
+ @args = $inbox->recv_nb('foo');
+
+ $mesg = $inbox->recv('bar');
+ $mesg = $inbox->recv_nb('bar');
+
+=item send ( $id, @data )
+
+=item send ( \@list, @data )
+
+Send a message to an ID or list of IDs.
+
+ $inbox->send('foo', qw/arg1 arg2 argN/);
+ $inbox->send([ 'bar', 'baz' ], 'ping');
+
+=item size ( [ $id ] )
+
+Acquire the number of messages pending for the given ID or all IDs.
+
+ $count = $inbox->size('foo');
+ %pairs = $inbox->size();
+
+=item end ( $id )
+
+=item end ( \@list )
+
+=item end ( )
+
+Signal that there is no more work to be sent for the given ID or list of IDs.
+Omitting an ID will end all IDs. Once ended, no more messages may be sent.
+
+ $inbox->end('foo');
+ $inbox->end([ 'bar', 'baz']);
+ $inbox->end();
+
+=back
+
+=head1 REQUIREMENTS
+
+MCE::Inbox requires Perl 5.10.1 and MCE::Shared 1.841 minimally.
+
+=head1 SEE ALSO
+
+=over 3
+
+=item * L<https://github.com/marioroy/mce-examples/tree/master/chameneos>
+
+=item * L<MCE::Channel>
+
+=back
+
+=head1 AUTHOR
+
+Mario E. Roy, S<E<lt>marioeroy AT gmail DOT comE<gt>>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2019 by Mario E. Roy
+
+MCE::Inbox is released under the same license as Perl.
+
+See L<https://dev.perl.org/licenses/> for more information.
+
+=cut

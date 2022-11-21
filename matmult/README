@@ -1,0 +1,168 @@
+
+###############################################################################
+ # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * #
+
+ This folder contains parallel examples for computing matrix multiplication.
+ Sharing piddles is via PDL::Parallel::threads, created by David Mertens, and
+ PDL::IO::FastRaw which comes pre-installed with PDL.
+
+ The strassen examples apply the Strassen divide-and-conquer algorithm with
+ modifications to recycle piddles and slices as much as possible to minimize
+ memory utilization. Two implementations are provided using PDL::IO::FastRaw
+ and PDL::Parallel::threads.
+
+   https://en.wikipedia.org/wiki/Strassen_algorithm
+
+ One may diff the examples to see the comparison between using PDL::IO::FastRaw
+ and PDL::Parallel::threads.
+
+   diff matmult_mce_f.pl matmult_mce_t.pl
+   diff strassen_07_f.pl strassen_07_t.pl
+
+ The examples ending in *_[df].pl spawn child processes via fork.
+ Files ending in *_t.pl and matmult_simd.pl spawn threads.
+
+ -- Usage Update 2022 -------------------------------------------------------
+
+ Passing a flag to the script will attempt to load PDL::LinearAlgebra::Real.
+ If available, PDL::LinearAlgebra::Real computes faster via LAPACK/OpenBLAS.
+ Use PDL 2.077 or later for best results. Check also, OpenMP-enabled i.e.
+ $ pkg-config --variable=openblas_config openblas | grep -c USE_OPENMP
+
+ Archived:
+
+   The strassen_49 examples relocated to the archive folder.
+
+   strassen_49_f.pl
+   strassen_49_t.pl
+
+ Examples:
+
+   perl matmult_base.pl  4096        # 54.685s built-in matrix multiply
+   perl matmult_base.pl  4096 1      #  6.706s LAPACK/OpenBLAS 1 thread
+   perl matmult_base.pl  4096 4      #  1.727s LAPACK/OpenBLAS 4 threads
+
+   perl matmult_mce_d.pl 4096 4      # 12.468s built-in matrix multiply
+   perl matmult_mce_d.pl 4096 4 1    #  1.915s LAPACK/OpenBLAS 4 threads
+
+   perl matmult_mce_f.pl 4096 4      # 11.950s built-in matrix multiply
+   perl matmult_mce_f.pl 4096 4 1    #  1.836s LAPACK/OpenBLAS 4 threads
+
+   perl matmult_mce_t.pl 4096 4      # 12.245s built-in matrix multiply
+   perl matmult_mce_t.pl 4096 4 1    #  1.856s LAPACK/OpenBLAS 4 threads
+
+   perl matmult_simd.pl  4096 4      # 16.136s built-in matrix multiply
+   perl matmult_simd.pl  4096 4 1    #  1.763s LAPACK/OpenBLAS 4 threads
+
+   perl strassen_07_f.pl 4096        #  3.516s built-in matrix multiply
+   perl strassen_07_f.pl 4096 1      #  1.915s LAPACK/OpenBLAS 7 threads
+
+   perl strassen_07_t.pl 4096        #  3.658s built-in matrix multiply
+   perl strassen_07_t.pl 4096 1      #  2.072s LAPACK/OpenBLAS 7 threads
+
+
+###############################################################################
+ # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * # * #
+
+ -- Usage from 2013 ---------------------------------------------------------
+
+ :: perl matmult_*.pl 1024 [ N_threads ]       # Default matrix size 512
+                                               # Default N_threads 8
+
+    matmult_base.pl    PDL $c = $a x $b (1 worker)
+    matmult_mce_d.pl   Uses MCE's do method to fetch (a) and store result (c)
+                       Uses PDL::IO::FastRaw to read (b)
+
+    matmult_mce_f.pl   MCE + PDL::IO::FastRaw
+    matmult_mce_t.pl   MCE + PDL::Parallel::threads
+    matmult_perl.pl    MCE + classic implementation in pure Perl
+
+    matmult_simd.pl    Parallelization via PDL::Parallel::threads::SIMD
+
+       The script was taken from https://gist.github.com/run4flat/4942132
+       for folks wanting to review, study, and compare with MCE.
+       Thank you, David Mertens.
+
+ :: perl strassen_*.pl 1024                    # Default matrix size 512
+
+    MCE divide-and-conquer 1 level, 7 workers
+
+    strassen_07_f.pl   Uses PDL::IO::FastRaw
+    strassen_07_t.pl   Uses PDL::Parallel::threads
+    strassen_perl.pl   Pure Perl implementation
+
+ The system at the time of testing, contained 2x Intel E5649 processors with
+ 32GB 1066 MHz RAM. The OS is RHEL 6.3, Perl 5.10.1, and perl-PDL-2.4.7-1.
+
+ For repeatable times, close all Browser windows and desktop applications
+ before testing 4096x4096 and higher. Doing so will maximize CPU L1/L2/L3
+ cache availability for PDL.
+
+ Times are reported in number of seconds.
+
+ -- 2013 Results for 1024x1024 -----------------------------------------------
+
+ matmult_base:    2.686s compute:   1 worker:    2.894s script running time
+ matmult_mce_d:   0.545s compute:  24 workers:   0.852s script
+ matmult_mce_f:   0.479s compute:  24 workers:   0.824s script
+ matmult_mce_t:   0.510s compute:  24 workers:   1.473s script
+ matmult_simd:    0.780s compute:  24 workers:   1.065s script
+
+ strassen_07_f:   0.385s compute:   7 workers:   0.665s script
+ strassen_07_t:   0.397s compute:   7 workers:   0.992s script
+
+ matmult_perl:   23.471s compute:  24 workers:  24.175s script
+ strassen_perl:  44.685s compute:   7 workers:  45.119s script
+
+ Output
+   (0, 0): 365967179776
+   (324, 5): 3113930291200
+   (42, 172): 94839222283264
+   (1023, 1023): 563314846859776
+
+ -- 2013 Results for 2048x2048 -----------------------------------------------
+
+ matmult_base:   21.521s compute:   1 worker:   21.783s script:   0.3% memory
+ matmult_mce_d:   4.206s compute:  24 workers:   4.528s script:   3.5% memory
+ matmult_mce_f:   3.483s compute:  24 workers:   4.017s script:   3.1% memory
+ matmult_mce_t:   4.113s compute:  24 workers:   5.191s script:   0.9% memory
+ matmult_simd:    4.617s compute:  24 workers:   4.901s script:   0.8% memory
+
+ strassen_07_f:   1.951s compute:   7 workers:   2.249s script:   1.5% memory
+ strassen_07_t:   1.934s compute:   7 workers:   2.576s script:   1.4% memory
+
+ matmult_perl:  185.343s compute:  24 workers: 187.698s script:   9.7% memory
+ strassen_perl: 319.708s compute:   7 workers: 320.969s script:   8.6% memory
+
+ Output
+   (0, 0): 5859767746560
+   (324, 5): 49826231939072
+   (42, 172): 1.5180794208809e+15
+   (2047, 2047): 1.80202496872953e+16
+
+ -- 2013 Results for 4096x4096 -----------------------------------------------
+
+ There may be a regression in PDL causing 4096 and higher to run very slow,
+ depending on the system. Try computing 4095x4095 matrix if that's the case.
+
+ matmult_base:  172.145s compute:   1 worker:  172.145s script:   1.2% memory
+ matmult_mce_d:  34.954s compute:  24 workers:  35.717s script:  12.0% memory
+ matmult_mce_f:  36.457s compute:  24 workers:  37.336s script:  10.8% memory
+ matmult_mce_t:  32.565s compute:  24 workers:  33.723s script:   1.8% memory
+ matmult_simd:   34.161s compute:  24 workers:  34.614s script:   2.0% memory
+
+ strassen_07_f:  12.701s compute:   7 workers:  13.186s script:   5.5% memory
+ strassen_07_t:  12.964s compute:   7 workers:  13.671s script:   4.8% memory
+
+ Output for 4096x4096
+   (0, 0): 93790635294720
+   (324, 5): 797336174714880
+   (42, 172): 2.42948503082552e+16
+   (4095, 4095): 5.76554474219245e+17
+
+ Output for 4095x4095
+   (0, 0): 93699068033025
+   (324, 5): 796557775505310
+   (42, 172): 2.42711321647519e+16
+   (4094, 4094): 5.75851038774031e+17
+

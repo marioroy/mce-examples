@@ -1,0 +1,65 @@
+
+ This dir contains examples demonstrating DBI/DBD::SQLite with MCE.
+
+ ## Usage ####################################################################
+
+ 1) perl create.pl [ n_rows ]   creates SAMPLE.DB ; default 3k rows
+    perl create.pl 100000       re-create DB      ; 100k rows
+
+ 2) perl query1.pl              chunk_size => NA  ; MCE::Loop
+    perl query2.pl              chunk_size => 300 ; MCE::Loop no output order
+    perl query3.pl              chunk_size => 300 ; MCE::Flow w/ output order
+
+ 3) perl update1.pl             chunk_size => NA  ; MCE::Loop
+    perl update2.pl             chunk_size => 300 ; MCE::Loop
+    perl update3.pl             chunk_size => 300 ; MCE::Flow
+
+ For SQLite, simulatenous updates and select are possible due to calling
+ fetchall for the select process. The update examples have 2 db iterator
+ functions; db_iter_client_server and db_iter_auto_offset. Configure MCE
+ to use db_iter_client_server when running against a client/server DB.
+
+ The query1/update1 examples are beneficial for apps with long compute time
+ per each row, thus chunking is not desired.
+
+ Ensure Perl can load DBI and DBD::SQLite. Install any missing module(s).
+
+    perl -MDBI -MDBD::SQLite -e 1
+
+    ArchLinux ; pacman -S perl-dbi perl-dbd-sqlite
+    Cygwin    ; install via setup-x86; perl-DBI, perl-DBD-SQLite
+    Debian    ; apt-get install libdbi-perl libdbd-sqlite3-perl
+    FreeBSD   ; pkg install p5-DBI p5-DBD-SQLite
+    Red Hat   ; yum install perl-DBI perl-DBD-SQLite
+    Via CPAN  ; cpan install DBD::SQLite
+
+ ## Running ##################################################################
+
+ Copy the sampledb dir to a writeable location. YMMV as far as running times.
+ Testing was completed on a CentOS 7 VM (2.6 GHz Intel Core i7, 1600 MHz RAM)
+ under /dev/shm/.
+
+ 1) perl create.pl 100000                  0.322s ; 100k rows ; ~ 2.0MB
+
+ 2) perl query1.pl  |tail                  4.933s ; w/ MCE->printf(...)
+    perl query1.pl                         3.122s ; no MCE->printf(...)
+
+    perl query2.pl  |tail                  0.165s ; chunk_size =>  100
+    perl query2.pl  |tail                  0.125s ; chunk_size =>  300
+    perl query2.pl  |tail                  0.117s ; chunk_size =>  900
+
+    perl query3.pl  |tail                  0.167s ; chunk_size =>  100
+    perl query3.pl  |tail                  0.124s ; chunk_size =>  300
+    perl query3.pl  |tail                  0.118s ; chunk_size =>  900
+
+ 3) perl update1.pl >/dev/null            21.163s ; prefetch size: 300
+                                                    one update per commit
+
+    perl update2.pl >/dev/null             2.931s ; chunk_size =>  100
+    perl update2.pl >/dev/null             0.963s ; chunk_size =>  300
+    perl update2.pl >/dev/null             0.532s ; chunk_size =>  900
+
+    perl update3.pl >/dev/null             2.936s ; chunk_size =>  100
+    perl update3.pl >/dev/null             0.961s ; chunk_size =>  300
+    perl update3.pl >/dev/null             0.537s ; chunk_size =>  900
+

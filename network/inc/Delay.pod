@@ -1,0 +1,84 @@
+
+=head1 NAME
+
+Delay - Throttle module for use with MCE::Shared.
+
+=head1 SYNOPSIS
+
+  use FindBin;
+  use lib "$FindBin::Bin/inc";
+
+  use Delay;
+  use MCE::Hobo;
+  use MCE::Shared;
+  use Time::HiRes qw(sleep time);
+
+  my $outfh = MCE::Shared->handle( ">>", \*STDOUT );
+  my $delay = MCE::Shared->share( Delay->new(0.1) );
+
+  MCE::Hobo->create( sub {
+      for (1..5) {
+          sleep $delay->get();
+          printf {$outfh} "%s : %0.03f\n", MCE::Hobo->pid(), time;
+      }
+  } ) for 1..3;
+
+  MCE::Hobo->waitall;
+
+  -- Output
+
+  3247 : 1489896612.600
+  3248 : 1489896612.700
+  3249 : 1489896612.800
+  3247 : 1489896612.900
+  3248 : 1489896613.000
+  3249 : 1489896613.100
+  3247 : 1489896613.200
+  3248 : 1489896613.300
+  3249 : 1489896613.400
+  3247 : 1489896613.500
+  3248 : 1489896613.600
+  3249 : 1489896613.700
+  3247 : 1489896613.800
+  3248 : 1489896613.900
+  3249 : 1489896614.000
+
+=head1 DESCRIPTION
+
+Sometimes, there is a need to throttle the script from running too fast.
+This module can be shared via MCE::Shared for throttling many workers.
+
+=head1 API
+
+=over 3
+
+=item $delay->new( floating_seconds )
+
+Constructs a delay object.
+
+  my $delay = Delay->new( 0.1 );
+
+=item $delay->get()
+
+Returns how long to sleep in C<floating_seconds>. Use with C<Time::HiRes>.
+
+  use Time::HiRes "sleep";
+
+  sleep $delay->get();
+
+=back
+
+=head1 AUTHOR
+
+Mario E. Roy, S<E<lt>marioeroy AT gmail DOT comE<gt>>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2017 by Mario E. Roy
+
+Delay is released under the same license as Perl.
+
+See L<https://dev.perl.org/licenses/> for more information.
+
+=cut
+

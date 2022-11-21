@@ -1,0 +1,111 @@
+
+##
+##  The idea to create this directory came from the MooseX-POE module.
+##  What a great idea. :)
+##
+##  Back in 2007, Tim Bray created the wonderful Wide-Finder site. I came
+##  across this site 2 months ago when searching for problems to solve using
+##  MCE. At the time, MCE lacked the slurpio option. MCE wasn't fast enough
+##  as seen with the first wf_mce1.pl example. Perl allows the possibility to
+##  slurp an entire file into a scalar. All I needed was an if statement to
+##  not convert the chunk to an array via the use_slurpio option.
+##
+##  https://www.tbray.org/ongoing/When/200x/2007/09/20/Wide-Finder
+##  https://www.tbray.org/ongoing/When/200x/2007/10/30/WF-Results
+##  https://www.tbray.org/ongoing/When/200x/2007/11/12/WF-Conclusions
+##
+##  It requires the data at https://www.tbray.org/tmp/o10k.ap
+##  To create o1000k.ap, take o10k.ap and concatenate it 99 more times.
+##
+##  UNIX$ wget https://www.tbray.org/tmp/o10k.ap
+##  UNIX$ for i in `seq 1 100`; do cat o10k.ap >> o1000k.ap; done 
+##
+##  Scripts are normalized to use Time::HiRes for computing time to run.
+##
+
+tbray_baseline1.pl
+      Baseline script for Perl.
+      Regex optimization not working as expected.
+
+tbray_baseline2.pl
+      Regex optimization working as expected.
+
+wf_mce1.pl
+      By default, MCE passes a reference to an array containing
+      the chunk data.
+
+wf_mce2.pl
+      Enabling slurpio causes MCE to pass the reference of the scalar
+      containing the raw chunk data. Essentially, MCE does not convert
+      the chunk to an array. That is the sole difference between
+      slurpio => 1 and slurpio => 0 (default).
+
+wf_mce3.pl
+      Like wf_mce2.pl. Enable parallel IO.
+
+wf_mmap.pl
+      Code from Sean O'Rourke, 2007, public domain.
+      Modified to default to 8 workers if -J is not specified.
+      Modified to not use Sys::Mmap.
+
+##
+## Running:
+##
+
+    # Serial
+    perl tbray_baseline1.pl o10k.ap
+    perl tbray_baseline2.pl o10k.ap
+
+    # Parallel
+    perl -s wf_mce1.pl -J=8 o10k.ap
+    perl -s wf_mce2.pl -J=8 o10k.ap
+    perl -s wf_mce3.pl -J=8 o10k.ap
+    perl -s wf_mmap.pl -J=8 o10k.ap
+
+##
+##  Times are reported in number of seconds.
+##
+##  Benchmarked under Linux -- CentOS 6.2 (RHEL6), Perl 5.10.1
+##  Hardware: 2.0 GHz (4 Cores -- 8 logical processors), 7200 RPM Disk
+##  Scripts wf_mce1/2/3 and wf_mmap are benchmarked with -J=8.
+##  Log file tested was o1000k.ap (1 million rows).
+##
+##  Cold cache -- sync; echo 3 >/proc/sys/vm/drop_caches
+##  Warm cache -- log file is read from FS cache
+##
+
+Script....:  baseline1  baseline2  wf_mce1  wf_mce2  wf_mce3  wf_mmap
+Cold cache:      1.674      1.370    1.252    1.182    1.174    3.056
+Warm cache:      1.236      0.923    0.277    0.106    0.098    0.092
+
+MCE is on the heals of MMAP IO performance levels. MCE performs sequential IO
+(only a single worker reads at any given time). For MMAP IO, many workers are
+reading simultaneously (essentially random IO), which is not noticeable when
+reading from FS cache. MMAP IO is seen wanting nearly 3x the time when reading
+directly from disk. That came as a surprise to me actually.
+
+The result helps clarify a decision I made with MCE. Sequential IO is always
+thought to be the fastest out there in various benchmark reviews (even SSDs).
+Therefore, I designed MCE to follow a bank-teller queuing model when reading
+input data.
+
+##
+##  Q. Why does MCE follow a bank-teller queuing model for input data?
+##
+
+The main reason was for maximizing on all available cores from start to end.
+In essence, a core should begin to go idle towards the end of the job such
+as reaching the EOF. A worker requiring 1.5x the time to process a given chunk
+should not impact other workers processing other chunks.
+
+##
+##  Q. Why chunking?
+##
+
+The biggest reason for chunking is to reduce the overhead as in the number of
+trips between workers and the main process. Hence, less IPC.
+
+Chunking also helps enable the power-of-randomness. There's a less chance for
+NFS to choke when workers acquire enough input data to last 10 ~ 15 minutes of
+compute time.
+
