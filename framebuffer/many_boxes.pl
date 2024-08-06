@@ -5,7 +5,7 @@
 use strict;
 
 use Graphics::Framebuffer;
-use Time::HiRes qw( sleep );
+use Time::HiRes qw( sleep time );
 use Getopt::Long;
 use Pod::Usage;
 use List::Util qw( max min );
@@ -25,12 +25,12 @@ package App::Framebuffer {
 };
 
 my $dev      = 0;
-my $delay    = 0.010;
-my $nitems   = 50;
+my $delay    = 0.050;
+my $nitems   = 25;
 my $noerase  = 0;
 my $nworkers = 2;
 my $radius   = 0;
-my $runmode  = 1;
+my $runmode  = 0;
 my $sharedfb = 0;
 my $help     = 0;
 
@@ -67,11 +67,12 @@ my $F = MCE::Shared->share( { module => 'App::Framebuffer' },
 
 $F->cls('OFF');
 
-use constant { NUMCOLORS => 96, DELTA => 9, OFFSET => 3 };
+use constant { NUMCOLORS => 96, DELTA => 9, OFFSET => 5 };
 use constant { X1 => 0, Y1 => 1, X2 => 2, Y2 => 3 };
 
 my ( $x1, $y1, $x2, $y2, $dx1, $dy1, $dx2, $dy2 );
 my ( $i, $j, $k, @b, @c, @red, @green, @blue );
+my ( $t, $d );
 
 my $screen_info   = $F->screen_dimensions();
 my $screen_width  = $screen_info->{width};
@@ -116,6 +117,8 @@ sub loop {
     initBuffers();
 
     while ( ! $done->get() ) {
+        $t = time if $delay;
+
         # Erase old
         unless ( $noerase ) {
             $j = ( $j + 1 ) % $nitems;
@@ -141,7 +144,10 @@ sub loop {
 
         $i = ( $i + 1 ) % $nitems;
 
-        sleep($delay) if $delay;
+        if ( $delay ) {
+            $d = $delay - (time - $t);
+            sleep($d) if $d > 0.0;
+        }
     }
 
     return;
@@ -191,11 +197,11 @@ sub getNextCoordinates {
 
     $$pn += $$pdn;    # move (n) by velocity factor
 
-    if ( $$pn <= 0 + 5 ) {
+    if ( $$pn <= 0 + 1 ) {
         $$pn -= $$pdn;
         $$pn += ( $$pdn = velocityPlus() );
     }
-    elsif ( $$pn >= $max - 5 ) {
+    elsif ( $$pn >= $max - 1 ) {
         $$pn -= $$pdn;
         $$pn += ( $$pdn = velocityMinus() );
     }
