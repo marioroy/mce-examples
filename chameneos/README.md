@@ -12,6 +12,8 @@ Dependencies:
 Files:
 
   * rodrigo.pl   - Thread::Semaphore, concurrency via threads
+  * pipe1.pl     - MCE::Channel::PipeFast, concurrency via threads
+  * pipe2.pl     - MCE::Channel::PipeFast, concurrency via MCE::Child
   * channel1.pl  - MCE::Channel::SimpleFast, concurrency via threads
   * channel2.pl  - MCE::Channel::SimpleFast, concurrency via MCE::Child
   * condvar1.pl  - MCE::Shared using the TIE interface
@@ -24,10 +26,12 @@ Running:
 
   * perl rodrigo.pl  6000
 
-  * perl channel1.pl 6000  # require Perl 5.8 minimally
+  * perl pipe1.pl    6000  # requires Perl 5.8 minimally
+  * perl pipe2.pl    6000
+  * perl channel1.pl 6000
   * perl channel2.pl 6000
 
-  * perl condvar1.pl 6000  # require Perl 5.10.1 minimally
+  * perl condvar1.pl 6000  # requires Perl 5.10.1 minimally
   * perl condvar2.pl 6000
   * perl inbox1.pl   6000
   * perl inbox2.pl   6000
