@@ -16,9 +16,10 @@ use Time::HiRes 'time';
 
 die 'No argument given' if not @ARGV;
 
+# synchronization: creatures communicate on channel 0 to broker
 my @chnls = map { MCE::Channel->new( impl => 'SimpleFast' ) } 0..10;
-my $start = time;
 
+# colors and matching
 my @creature_colors = qw(blue red yellow);
 my %complement;
 
@@ -37,6 +38,13 @@ sub complement {
   }
 }
 
+foreach my $c1 (@creature_colors) {
+  foreach my $c2 (@creature_colors) {
+    $complement{$c1,$c2} = complement($c1,$c2);
+  }
+}
+
+# reporting
 sub show_complement {
   foreach my $c1 (@creature_colors) {
     foreach my $c2 (@creature_colors) {
@@ -52,40 +60,25 @@ sub spellout {
   return ' '. join(' ', map { $numbers[$_] } split //, $n);
 }
 
-sub print_header {
-  my @args = @_;
-  print ' ', join(' ', @args), "\n";
-}
-
-sub run {
-  my ($num, $list) = @_;
-  my $broker = 0;
-  print_header(@{$list});
-
-  my @threads =
-    map { threads->create(\&cameneos, $broker, $_+1, $list->[$_])
-        } 0 .. @{$list} - 1;
-
-  broker($broker, $num);
-  cleanup($broker, scalar @{$list}, \@threads);
-}
-
-sub cameneos {
-  my ($broker, $self, $color) = @_;
+# the zoo
+sub creature {
+  my ($my_id, $color) = @_;
   my ($meetings, $metself) = (0, 0);
 
   my $continue = 1;
   while ($continue) {
-    $chnls[$broker]->send("$self $color");
-    local @_ = split / /, $chnls[$self]->recv();
+    $chnls[0]->send("$my_id $color");
+    local @_ = split / /, $chnls[$my_id]->recv();
     if ($_[0] eq 'stop') {
+      # leave game
       print $meetings, spellout($metself), "\n";
-      $chnls[$broker]->send($meetings);
+      $chnls[0]->send($meetings);
       $continue = 0;
     }
     else {
-      my ($opid, $ocolor) = @_;
-      $metself++ if $opid eq $self;
+      # save my results
+      my ($oid, $ocolor) = @_;
+      $metself++ if $oid eq $my_id;
       $meetings++;
       $color = $complement{$color,$ocolor};
     }
@@ -93,50 +86,58 @@ sub cameneos {
 }
 
 sub broker {
-  my ($broker, $num) = @_;
-  while ($num--) {
-    my ($id1) = my @c1 = split / /, $chnls[$broker]->recv();
-    my ($id2) = my @c2 = split / /, $chnls[$broker]->recv();
+  my ($n, $nthrs) = @_;
+  my $total_meetings = 0;
+
+  while ($n--) {
+    # await two creatures
+    my ($id1) = my @c1 = split / /, $chnls[0]->recv();
+    my ($id2) = my @c2 = split / /, $chnls[0]->recv();
+    # registration, exchange colors
     $chnls[$id1]->send("@c2");
     $chnls[$id2]->send("@c1");
   }
-}
 
-sub cleanup {
-  my ($broker, $num, $threads) = @_;
-  my $total_meetings = 0;
-
-  while ($num) {
-    local @_ = split / /, $chnls[$broker]->recv();
+  while ($nthrs) {
+    local @_ = split / /, $chnls[0]->recv();
     if (@_ == 2) {
+      # notify stop game
       my ($id, $color) = @_;
       $chnls[$id]->send('stop');
     }
     else {
+      # tally meetings
       my ($meetings) = @_;
-      $total_meetings += $meetings;
-      $num--;
+      $total_meetings += int($meetings);
+      $nthrs--;
     }
   }
 
-  $_->join() for @{$threads};
+  return $total_meetings;
+}
+
+# game
+sub pall_mall {
+  my ($n, $colors) = @_;
+  print ' ', join(' ', @{$colors}), "\n";
+
+  my @thrs =
+    map { threads->create(\&creature, $_+1, $colors->[$_])
+        } 0 .. @{$colors} - 1;
+
+  my $total_meetings = broker($n, scalar @thrs);
+
+  $_->join() for @thrs;
 
   print spellout($total_meetings), "\n";
   print "\n";
-
-  return;
 }
 
-foreach my $c1 (@creature_colors) {
-  foreach my $c2 (@creature_colors) {
-    $complement{$c1,$c2} = complement($c1,$c2);
-  }
-}
+my $start = time;
 
 show_complement();
-
-run($ARGV[0],[ qw(blue red yellow) ]);
-run($ARGV[0],[ qw(blue red yellow red yellow blue red yellow red blue) ]);
+pall_mall($ARGV[0],[ qw(blue red yellow) ]);
+pall_mall($ARGV[0],[ qw(blue red yellow red yellow blue red yellow red blue) ]);
 
 printf "duration: %0.03f seconds\n", time - $start;
 
