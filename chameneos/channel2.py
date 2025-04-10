@@ -186,12 +186,9 @@ def chameneosiate(n):
     print("duration: {:.3f} seconds".format(time_end - time_start))
 
 
-status = 0
 try:
     chameneosiate(int(sys.argv[1]))
 except KeyboardInterrupt:
     print('')
-    status = 1
-finally:
-    if status: sys.exit(status)
+    sys.exit(1)
 
