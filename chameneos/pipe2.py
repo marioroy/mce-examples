@@ -16,23 +16,28 @@ import multiprocessing as mp
 class Channel:
 
     def __init__(self):
-        self.rd, wr = os.pipe() # read from pipe via os module, faster
+        self.rd, wr = os.pipe()
         self.wr = os.fdopen(wr, 'wb', 0); # fdopen, so can self.wr.flush()
+
+    def __writeall(self, data):
+        while data:
+            num_written = self.wr.write(data)
+            data = data[num_written:]
+        self.wr.flush()
 
     def send(self, s):
         if s is None:
             plen = struct.pack('!i', -1)
-            self.wr.write(plen)
+            self.__writeall(plen)
             return
         if not isinstance(s, str): s = str(s)
         if len(s) > 0:
             bstr = bytes(s, 'utf-8')
             plen = struct.pack('!i', len(bstr))
-            self.wr.write(plen + bstr)
+            self.__writeall(plen + bstr)
         else:
             plen = struct.pack('!i', 0)
-            self.wr.write(plen)
-        self.wr.flush()
+            self.__writeall(plen)
 
     def recv(self):
         slen = struct.unpack('!i', os.read(self.rd, 4))[0]
