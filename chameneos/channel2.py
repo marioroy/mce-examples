@@ -18,6 +18,9 @@ class Channel:
     def __init__(self):
         self.rd, self.wr = socket.socketpair()
 
+    def __del__(self):
+        self.close()
+
     def send(self, s):
         if s is None:
             plen = struct.pack('!i', -1)
@@ -190,7 +193,5 @@ except KeyboardInterrupt:
     print('')
     status = 1
 finally:
-    if status: time.sleep(0.05)
-    for chnl in _chnls: chnl.close()
     if status: sys.exit(status)
 

@@ -19,6 +19,9 @@ class Channel:
         self.rd, wr = os.pipe()
         self.wr = os.fdopen(wr, 'wb', 0); # fdopen, so can self.wr.flush()
 
+    def __del__(self):
+        self.close()
+
     def __writeall(self, data):
         while data:
             num_written = self.wr.write(data)
@@ -196,7 +199,5 @@ except KeyboardInterrupt:
     print('')
     status = 1
 finally:
-    if status: time.sleep(0.05)
-    for chnl in _chnls: chnl.close()
     if status: sys.exit(status)
 
