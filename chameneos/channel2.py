@@ -116,6 +116,13 @@ def creature(my_id, color):
             color = _complement[(color, ocolor)]
 
 
+def __creature(my_id, color):
+    try:
+        creature(my_id, color)
+    except KeyboardInterrupt:
+        pass
+
+
 def broker(n, nthrs):
 
     total_meetings = 0
@@ -151,7 +158,7 @@ def pall_mall(n, colors):
 
     thrs = list()
     for i in range(len(colors)):
-        thrs.append(mp.Process(target=creature, args=(i+1, colors[i])))
+        thrs.append(mp.Process(target=__creature, args=(i+1, colors[i])))
         thrs[-1].start()
 
     total_meetings = broker(n, len(thrs))
@@ -175,9 +182,18 @@ def chameneosiate(n):
     time_end = time.time()
     print("duration: {:.3f} seconds".format(time_end - time_start))
 
-    for chnl in _chnls:
-        chnl.close()
 
-
-chameneosiate(int(sys.argv[1]))
+status = 0
+try:
+    chameneosiate(int(sys.argv[1]))
+except KeyboardInterrupt:
+    print('')
+    status = 1
+except Exception as e:
+    print("Error:", e)
+    status = 1
+finally:
+    if status: time.sleep(0.05)
+    for chnl in _chnls: chnl.close()
+    sys.exit(status)
 
