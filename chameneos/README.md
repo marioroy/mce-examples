@@ -17,7 +17,7 @@ The Chameneos benchmark is a synchronization problem. Each program should:
 Dependencies:
 
 ```text
-  MCE 1.839, MCE::Shared 1.841 minimally
+  Perl MCE 1.839, MCE::Shared 1.841 minimally
   Sereal::Encode 3.015, Sereal::Decode 3.015 minimally (optional)
   threads, threads::shared (threading optional)
   Python 3
@@ -32,6 +32,7 @@ Files:
   pipe2.py      Python demonstration, concurrency via multiprocessing
   channel1.pl   MCE::Channel::SimpleFast, concurrency via threads
   channel2.pl   MCE::Channel::SimpleFast, concurrency via MCE::Child
+  channel2.py   Python demonstration, concurrency via multiprocessing
   condvar1.pl   MCE::Shared using the TIE interface
   condvar2.pl   MCE::Shared using the OO interface
   inbox1.pl     MCE::Inbox, concurrency via threads
@@ -54,13 +55,15 @@ Running:
   perl inbox1.pl   6000
   perl inbox2.pl   6000
 
-  python pipe2.py  6000  # Python demonstration using os.pipe
+  python pipe2.py  6000    # synchronization via os pipes
+  python channel2.py 6000  # synchronization via socketpairs
 ```
 
 Output:
 
 ```text
-$ ./pipe2.pl 600000
+$ perl pipe2.pl 600000
+
 blue + blue -> blue
 blue + red -> yellow
 blue + yellow -> red

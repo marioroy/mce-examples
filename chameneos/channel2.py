@@ -6,46 +6,45 @@
 #  Other Python solutions.
 #    https://pybenchmarks.org/u64q/performance.php?test=chameneosredux
 #
-#  chameneos-redux using os pipes for synchronization
+#  chameneos-redux using socketpairs for synchronization
 #    contributed by Mario Roy 2025-04-09
 ##
 
-import os, struct, sys, time
+import socket, struct, sys, time
 import multiprocessing as mp
 
 class Channel:
 
     def __init__(self):
-        self.rd, wr = os.pipe() # read from pipe via os module, faster
-        self.wr = os.fdopen(wr, 'wb', 0); # fdopen, so can self.wr.flush()
+        self.rd, self.wr = socket.socketpair()
 
     def send(self, s):
         if s is None:
             plen = struct.pack('!i', -1)
-            self.wr.write(plen)
+            self.wr.sendall(plen)
             return
         if not isinstance(s, str): s = str(s)
         if len(s) > 0:
             bstr = bytes(s, 'utf-8')
             plen = struct.pack('!i', len(bstr))
-            self.wr.write(plen + bstr)
+            self.wr.sendall(plen + bstr)
         else:
             plen = struct.pack('!i', 0)
-            self.wr.write(plen)
-        self.wr.flush()
+            self.wr.sendall(plen)
 
     def recv(self):
-        slen = struct.unpack('!i', os.read(self.rd, 4))[0]
-        if slen > 0: return os.read(self.rd, slen).decode('utf-8')
+        slen = struct.unpack('!i', self.rd.recv(4))[0]
+        if slen > 0: return self.rd.recv(slen).decode('utf-8')
         if slen < 0: return None
         return ""
 
     def close(self):
-        try:
-            self.wr.close() # os.fdopen file handle
-            os.close(self.rd) # os.pipe file descriptor
-        except Exception:
-            pass
+        for sock in (self.wr, self.rd):
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+            sock.close()
 
 
 if len(sys.argv) <= 1:
