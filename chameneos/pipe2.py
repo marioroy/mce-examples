@@ -195,11 +195,8 @@ try:
 except KeyboardInterrupt:
     print('')
     status = 1
-except Exception as e:
-    print("Error:", e)
-    status = 1
 finally:
     if status: time.sleep(0.05)
     for chnl in _chnls: chnl.close()
-    sys.exit(status)
+    if status: sys.exit(status)
 
