@@ -13,6 +13,14 @@
 import os, struct, sys, time
 import multiprocessing as mp
 
+# In Python 3.14, forkserver became the default start method for the
+# multiprocessing module on POSIX platforms.
+#
+# This application is fork-safe, not using threads before forking.
+# Explicitly set the multiprocessing start method to fork.
+mp.set_start_method("fork", force=True)
+
+
 class Channel:
 
     def __init__(self):
